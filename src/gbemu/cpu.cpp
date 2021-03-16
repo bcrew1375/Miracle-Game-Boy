@@ -49,28 +49,45 @@ void CPU::resetCPU() {
     memory->writeByte(0xFF4A, 0x00); // WY
     memory->writeByte(0xFF4B, 0x00); // WX
     memory->writeByte(0xFFFF, 0x00); // IE
+
+    interruptMasterEnableFlag = false;
+}
+
+
+uint16_t CPU::getRegisterPC()
+{
+    return registers.PC;
+}
+
+
+uint8_t CPU::getOpcode()
+{
+    return opcode;
+}
+
+bool CPU::getInterupptMasterEnableFlag()
+{
+    return interruptMasterEnableFlag;
 }
 
 
 uint32_t CPU::execute() {
     opcode = memory->readByte(registers.PC);
     clockCyclesExecuted = clockCyclesTable[opcode];
-    opcode = 0x04;
-
     registers.PC++;
 
     switch (opcode) {
     case 0x00: z80_nop(); break;
     case 0x01: z80_ld_reg16_dat16(&registers.BC); break;
-    case 0x02: z80_ld_reg16_addr_reg8(&registers.BC, &registers.A); break;
+    case 0x02: z80_ld_reg16_addr16_reg8(&registers.BC, &registers.A); break;
     case 0x03: z80_inc_reg16(&registers.BC); break;
     case 0x04: z80_inc_reg8(&registers.B); break;
     case 0x05: z80_dec_reg8(&registers.B); break;
     case 0x06: z80_ld_reg8_dat8(&registers.B); break;
     case 0x07: z80_rlca(); break;
-    case 0x08: z80_ld_addr_sp(); break;
+    case 0x08: z80_ld_addr16_sp(); break;
     case 0x09: z80_add_reghl_reg16(&registers.BC); break;
-    case 0x0A: z80_ld_rega_addr_reg16(&registers.BC); break;
+    case 0x0A: z80_ld_rega_addr16_reg16(&registers.BC); break;
     case 0x0B: z80_dec_reg16(&registers.BC); break;
     case 0x0C: z80_inc_reg8(&registers.C); break;
     case 0x0D: z80_dec_reg8(&registers.C); break;
@@ -78,7 +95,7 @@ uint32_t CPU::execute() {
     case 0x0F: z80_rrca(); break;
     case 0x10: z80_stop(); break;
     case 0x11: z80_ld_reg16_dat16(&registers.DE); break;
-    case 0x12: z80_ld_reg16_addr_reg8(&registers.DE, &registers.A); break;
+    case 0x12: z80_ld_reg16_addr16_reg8(&registers.DE, &registers.A); break;
     case 0x13: z80_inc_reg16(&registers.DE); break;
     case 0x14: z80_inc_reg8(&registers.D); break;
     case 0x15: z80_dec_reg8(&registers.D); break;
@@ -86,7 +103,7 @@ uint32_t CPU::execute() {
     case 0x17: z80_rla(); break;
     case 0x18: z80_jr_offset(); break;
     case 0x19: z80_add_reghl_reg16(&registers.DE); break;
-    case 0x1A: z80_ld_rega_addr_reg16(&registers.DE); break;
+    case 0x1A: z80_ld_rega_addr16_reg16(&registers.DE); break;
     case 0x1B: z80_dec_reg16(&registers.DE); break;
     case 0x1C: z80_inc_reg8(&registers.E); break;
     case 0x1D: z80_dec_reg8(&registers.E); break;
@@ -94,7 +111,7 @@ uint32_t CPU::execute() {
     case 0x1F: z80_rra(); break;
     case 0x20: z80_jr_nz(); break;
     case 0x21: z80_ld_reg16_dat16(&registers.HL); break;
-    case 0x22: z80_ldi_reghl_addr_rega(); break;
+    case 0x22: z80_ldi_reghl_addr16_rega(); break;
     case 0x23: z80_inc_reg16(&registers.HL); break;
     case 0x24: z80_inc_reg8(&registers.H); break;
     case 0x25: z80_dec_reg8(&registers.H); break;
@@ -102,7 +119,7 @@ uint32_t CPU::execute() {
     case 0x27: z80_daa(); break;
     case 0x28: z80_jr_z(); break;
     case 0x29: z80_add_reghl_reg16(&registers.HL); break;
-    case 0x2A: z80_ldi_rega_reghl_addr(); break;
+    case 0x2A: z80_ldi_rega_reghl_addr16(); break;
     case 0x2B: z80_dec_reg16(&registers.HL); break;
     case 0x2C: z80_inc_reg8(&registers.L); break;
     case 0x2D: z80_dec_reg8(&registers.L); break;
@@ -110,15 +127,15 @@ uint32_t CPU::execute() {
     case 0x2F: z80_cpl(); break;
     case 0x30: z80_jr_nc(); break;
     case 0x31: z80_ld_reg16_dat16(&registers.SP); break;
-    case 0x32: z80_ldd_reghl_addr_rega(); break;
+    case 0x32: z80_ldd_reghl_addr16_rega(); break;
     case 0x33: z80_inc_reg16(&registers.SP); break;
-    case 0x34: z80_inc_reghl_addr(); break;
-    case 0x35: z80_dec_reghl_addr(); break;
-    case 0x36: z80_ld_reghl_addr_dat8(); break;
+    case 0x34: z80_inc_reghl_addr16(); break;
+    case 0x35: z80_dec_reghl_addr16(); break;
+    case 0x36: z80_ld_reghl_addr16_dat8(); break;
     case 0x37: z80_scf(); break;
     case 0x38: z80_jr_c(); break;
     case 0x39: z80_add_reghl_reg16(&registers.SP); break;
-    case 0x3A: z80_ldd_rega_reghl_addr(); break;
+    case 0x3A: z80_ldd_rega_reghl_addr16(); break;
     case 0x3B: z80_dec_reg16(&registers.SP); break;
     case 0x3C: z80_inc_reg8(&registers.A); break;
     case 0x3D: z80_dec_reg8(&registers.A); break;
@@ -130,7 +147,7 @@ uint32_t CPU::execute() {
     case 0x43: z80_ld_reg8_reg8(&registers.B, &registers.E); break;
     case 0x44: z80_ld_reg8_reg8(&registers.B, &registers.H); break;
     case 0x45: z80_ld_reg8_reg8(&registers.B, &registers.L); break;
-    case 0x46: z80_ld_reg8_reghl_addr(&registers.B); break;
+    case 0x46: z80_ld_reg8_reghl_addr16(&registers.B); break;
     case 0x47: z80_ld_reg8_reg8(&registers.B, &registers.A); break;
     case 0x48: z80_ld_reg8_reg8(&registers.C, &registers.B); break;
     case 0x49: z80_ld_reg8_reg8(&registers.C, &registers.C); break;
@@ -138,7 +155,7 @@ uint32_t CPU::execute() {
     case 0x4B: z80_ld_reg8_reg8(&registers.C, &registers.E); break;
     case 0x4C: z80_ld_reg8_reg8(&registers.C, &registers.H); break;
     case 0x4D: z80_ld_reg8_reg8(&registers.C, &registers.L); break;
-    case 0x4E: z80_ld_reg8_reghl_addr(&registers.C); break;
+    case 0x4E: z80_ld_reg8_reghl_addr16(&registers.C); break;
     case 0x4F: z80_ld_reg8_reg8(&registers.C, &registers.A); break;
     case 0x50: z80_ld_reg8_reg8(&registers.D, &registers.B); break;
     case 0x51: z80_ld_reg8_reg8(&registers.D, &registers.C); break;
@@ -146,7 +163,7 @@ uint32_t CPU::execute() {
     case 0x53: z80_ld_reg8_reg8(&registers.D, &registers.E); break;
     case 0x54: z80_ld_reg8_reg8(&registers.D, &registers.H); break;
     case 0x55: z80_ld_reg8_reg8(&registers.D, &registers.L); break;
-    case 0x56: z80_ld_reg8_reghl_addr(&registers.D); break;
+    case 0x56: z80_ld_reg8_reghl_addr16(&registers.D); break;
     case 0x57: z80_ld_reg8_reg8(&registers.D, &registers.A); break;
     case 0x58: z80_ld_reg8_reg8(&registers.E, &registers.B); break;
     case 0x59: z80_ld_reg8_reg8(&registers.E, &registers.C); break;
@@ -154,7 +171,7 @@ uint32_t CPU::execute() {
     case 0x5B: z80_ld_reg8_reg8(&registers.E, &registers.E); break;
     case 0x5C: z80_ld_reg8_reg8(&registers.E, &registers.H); break;
     case 0x5D: z80_ld_reg8_reg8(&registers.E, &registers.L); break;
-    case 0x5E: z80_ld_reg8_reghl_addr(&registers.E); break;
+    case 0x5E: z80_ld_reg8_reghl_addr16(&registers.E); break;
     case 0x5F: z80_ld_reg8_reg8(&registers.E, &registers.A); break;
     case 0x60: z80_ld_reg8_reg8(&registers.H, &registers.B); break;
     case 0x61: z80_ld_reg8_reg8(&registers.H, &registers.C); break;
@@ -162,7 +179,7 @@ uint32_t CPU::execute() {
     case 0x63: z80_ld_reg8_reg8(&registers.H, &registers.E); break;
     case 0x64: z80_ld_reg8_reg8(&registers.H, &registers.H); break;
     case 0x65: z80_ld_reg8_reg8(&registers.H, &registers.L); break;
-    case 0x66: z80_ld_reg8_reghl_addr(&registers.H); break;
+    case 0x66: z80_ld_reg8_reghl_addr16(&registers.H); break;
     case 0x67: z80_ld_reg8_reg8(&registers.H, &registers.A); break;
     case 0x68: z80_ld_reg8_reg8(&registers.L, &registers.B); break;
     case 0x69: z80_ld_reg8_reg8(&registers.L, &registers.C); break;
@@ -170,23 +187,23 @@ uint32_t CPU::execute() {
     case 0x6B: z80_ld_reg8_reg8(&registers.L, &registers.E); break;
     case 0x6C: z80_ld_reg8_reg8(&registers.L, &registers.H); break;
     case 0x6D: z80_ld_reg8_reg8(&registers.L, &registers.L); break;
-    case 0x6E: z80_ld_reg8_reghl_addr(&registers.L); break;
+    case 0x6E: z80_ld_reg8_reghl_addr16(&registers.L); break;
     case 0x6F: z80_ld_reg8_reg8(&registers.L, &registers.A); break;
-    case 0x70: z80_ld_reghl_addr_reg8(&registers.B);
-    case 0x71: z80_ld_reghl_addr_reg8(&registers.C);
-    case 0x72: z80_ld_reghl_addr_reg8(&registers.D);
-    case 0x73: z80_ld_reghl_addr_reg8(&registers.E);
-    case 0x74: z80_ld_reghl_addr_reg8(&registers.H);
-    case 0x75: z80_ld_reghl_addr_reg8(&registers.L);
+    case 0x70: z80_ld_reghl_addr16_reg8(&registers.B);
+    case 0x71: z80_ld_reghl_addr16_reg8(&registers.C);
+    case 0x72: z80_ld_reghl_addr16_reg8(&registers.D);
+    case 0x73: z80_ld_reghl_addr16_reg8(&registers.E);
+    case 0x74: z80_ld_reghl_addr16_reg8(&registers.H);
+    case 0x75: z80_ld_reghl_addr16_reg8(&registers.L);
     case 0x76: z80_halt();
-    case 0x77: z80_ld_reghl_addr_reg8(&registers.A); break;
+    case 0x77: z80_ld_reghl_addr16_reg8(&registers.A); break;
     case 0x78: z80_ld_reg8_reg8(&registers.A, &registers.B); break;
     case 0x79: z80_ld_reg8_reg8(&registers.A, &registers.C); break;
     case 0x7A: z80_ld_reg8_reg8(&registers.A, &registers.D); break;
     case 0x7B: z80_ld_reg8_reg8(&registers.A, &registers.E); break;
     case 0x7C: z80_ld_reg8_reg8(&registers.A, &registers.H); break;
     case 0x7D: z80_ld_reg8_reg8(&registers.A, &registers.L); break;
-    case 0x7E: z80_ld_reg8_reghl_addr(&registers.A); break;
+    case 0x7E: z80_ld_reg8_reghl_addr16(&registers.A); break;
     case 0x7F: z80_ld_reg8_reg8(&registers.A, &registers.A); break;
     case 0x80: z80_add_rega_reg8(&registers.B); break;
     case 0x81: z80_add_rega_reg8(&registers.C); break;
@@ -194,7 +211,7 @@ uint32_t CPU::execute() {
     case 0x83: z80_add_rega_reg8(&registers.E); break;
     case 0x84: z80_add_rega_reg8(&registers.H); break;
     case 0x85: z80_add_rega_reg8(&registers.L); break;
-    case 0x86: z80_add_rega_reghl_addr(); break;
+    case 0x86: z80_add_rega_reghl_addr16(); break;
     case 0x87: z80_add_rega_reg8(&registers.A); break;
     case 0x88: z80_adc_rega_reg8(&registers.B); break;
     case 0x89: z80_adc_rega_reg8(&registers.C); break;
@@ -202,11 +219,121 @@ uint32_t CPU::execute() {
     case 0x8B: z80_adc_rega_reg8(&registers.E); break;
     case 0x8C: z80_adc_rega_reg8(&registers.H); break;
     case 0x8D: z80_adc_rega_reg8(&registers.L); break;
-    case 0x8E: z80_adc_rega_reghl_addr(); break;
+    case 0x8E: z80_adc_rega_reghl_addr16(); break;
     case 0x8F: z80_adc_rega_reg8(&registers.A); break;
-
+    case 0x90: z80_sub_rega_reg8(&registers.B); break;
+    case 0x91: z80_sub_rega_reg8(&registers.C); break;
+    case 0x92: z80_sub_rega_reg8(&registers.D); break;
+    case 0x93: z80_sub_rega_reg8(&registers.E); break;
+    case 0x94: z80_sub_rega_reg8(&registers.H); break;
+    case 0x95: z80_sub_rega_reg8(&registers.L); break;
+    case 0x96: z80_sub_rega_reghl_addr16(); break;
+    case 0x97: z80_sub_rega_reg8(&registers.A); break;
+    case 0x98: z80_sbc_rega_reg8(&registers.B); break;
+    case 0x99: z80_sbc_rega_reg8(&registers.C); break;
+    case 0x9A: z80_sbc_rega_reg8(&registers.D); break;
+    case 0x9B: z80_sbc_rega_reg8(&registers.E); break;
+    case 0x9C: z80_sbc_rega_reg8(&registers.H); break;
+    case 0x9D: z80_sbc_rega_reg8(&registers.L); break;
+    case 0x9E: z80_sbc_rega_reghl_addr16(); break;
+    case 0x9F: z80_sbc_rega_reg8(&registers.A); break;
+    case 0xA0: z80_rega_and_reg8(&registers.B); break;
+    case 0xA1: z80_rega_and_reg8(&registers.C); break;
+    case 0xA2: z80_rega_and_reg8(&registers.D); break;
+    case 0xA3: z80_rega_and_reg8(&registers.E); break;
+    case 0xA4: z80_rega_and_reg8(&registers.H); break;
+    case 0xA5: z80_rega_and_reg8(&registers.L); break;
+    case 0xA6: z80_rega_and_reghl_addr16(); break;
+    case 0xA7: z80_rega_and_reg8(&registers.A); break;
+    case 0xA8: z80_rega_xor_reg8(&registers.B); break;
+    case 0xA9: z80_rega_xor_reg8(&registers.C); break;
+    case 0xAA: z80_rega_xor_reg8(&registers.D); break;
+    case 0xAB: z80_rega_xor_reg8(&registers.E); break;
+    case 0xAC: z80_rega_xor_reg8(&registers.H); break;
+    case 0xAD: z80_rega_xor_reg8(&registers.L); break;
+    case 0xAE: z80_rega_xor_reghl_addr16(); break;
+    case 0xAF: z80_rega_xor_reg8(&registers.A); break;
+    case 0xB0: z80_rega_or_reg8(&registers.B); break;
+    case 0xB1: z80_rega_or_reg8(&registers.C); break;
+    case 0xB2: z80_rega_or_reg8(&registers.D); break;
+    case 0xB3: z80_rega_or_reg8(&registers.E); break;
+    case 0xB4: z80_rega_or_reg8(&registers.H); break;
+    case 0xB5: z80_rega_or_reg8(&registers.L); break;
+    case 0xB6: z80_rega_or_reghl_addr16(); break;
+    case 0xB7: z80_rega_or_reg8(&registers.A); break;
+    case 0xB8: z80_rega_cp_reg8(&registers.B); break;
+    case 0xB9: z80_rega_cp_reg8(&registers.C); break;
+    case 0xBA: z80_rega_cp_reg8(&registers.D); break;
+    case 0xBB: z80_rega_cp_reg8(&registers.E); break;
+    case 0xBC: z80_rega_cp_reg8(&registers.H); break;
+    case 0xBD: z80_rega_cp_reg8(&registers.L); break;
+    case 0xBE: z80_rega_cp_reghl_addr16(); break;
+    case 0xBF: z80_rega_cp_reg8(&registers.A); break;
+    case 0xC0: z80_ret_nz(); break;
+    case 0xC1: z80_pop_reg16(&registers.BC); break;
+    case 0xC2: z80_jp_nz(); break;
     case 0xC3: z80_jp_a16(); break;
+    case 0xC4: z80_call_nz(); break;
+    case 0xC5: z80_push_reg16(&registers.BC); break;
+    case 0xC6: z80_add_rega_dat8(); break;
+    case 0xC7: z80_rst(0x00); break;
+    case 0xC8: z80_ret_z(); break;
+    case 0xC9: z80_ret(); break;
+    case 0xCA: z80_jp_z(); break;
+    //case 0xCB: z80_nop(); break; // Unimplemented
+    case 0xCC: z80_call_z(); break;
+    case 0xCD: z80_call(); break;
+    case 0xCE: z80_adc_rega_dat8(); break;
+    case 0xCF: z80_rst(0x08); break;
+    case 0xD0: z80_ret_nc(); break;
+    case 0xD1: z80_pop_reg16(&registers.DE); break;
+    case 0xD2: z80_jp_nc(); break;
+    case 0xD3: /* Undefined */ break;
+    case 0xD4: z80_call_nc(); break;
+    case 0xD5: z80_push_reg16(&registers.DE); break;
+    case 0xD6: z80_add_rega_dat8(); break;
+    case 0xD7: z80_rst(0x10); break;
+    case 0xD8: z80_ret_c(); break;
+    case 0xD9: z80_reti(); break;
+    case 0xDA: z80_jp_c(); break;
+    case 0xDB: /* Undefined */ break; // Unimplemented
+    case 0xDC: z80_call_c(); break;
+    case 0xDD: /* Undefined */; break;
+    case 0xDE: z80_sbc_rega_dat8(); break;
+    case 0xDF: z80_rst(0x18); break;
+    case 0xE0: z80_ldh_addr8_rega(); break;
+    case 0xE1: z80_pop_reg16(&registers.DE); break;
+    case 0xE2: z80_ld_regc_port_rega(); break;
+    case 0xE3: /* Undefined */ break;
+    case 0xE4: /* Undefined */ break;
+    case 0xE5: z80_push_reg16(&registers.HL); break;
+    case 0xE6: z80_rega_and_dat8(); break;
+    case 0xE7: z80_rst(0x20); break;
+    case 0xE8: z80_add_sp_dat8(); break;
+    case 0xE9: z80_jp_reghl_addr16(); break;
+    case 0xEA: z80_ld_addr16_rega(); break;
+    case 0xEB: /* Undefined */ break;
+    case 0xEC: /* Undefined */ break;
+    case 0xED: /* Undefined */ break;
+    case 0xEE: z80_rega_xor_dat8(); break;
+    case 0xEF: z80_rst(0x28); break;
+    case 0xF0: z80_ldh_rega_addr8(); break;
+    case 0xF1: z80_pop_reg16(&registers.HL); break;
+    case 0xF2: z80_ld_rega_regc_port(); break;
+    case 0xF3: z80_di(); break;
+    case 0xF4: /* Undefined */ break;
+    case 0xF5: z80_push_reg16(&registers.AF); break;
+    case 0xF6: z80_rega_or_dat8(); break;
+    case 0xF7: z80_rst(0x30); break;
+    case 0xF8: z80_ld_reghl_sp_add_dat8(); break;
+    case 0xF9: z80_ld_sp_reghl(); break;
+    case 0xFA: z80_ld_rega_addr16(); break;
+    case 0xFB: z80_ei(); break;
+    case 0xFC: /* Undefined */ break;
+    case 0xFD: /* Undefined */ break;
+    case 0xFE: z80_rega_cp_dat8(); break;
+    case 0xFF: z80_rst(0x38); break;
     }
 
-    return 4;
+    return clockCyclesExecuted;
 }

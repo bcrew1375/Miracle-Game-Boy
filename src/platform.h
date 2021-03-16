@@ -23,6 +23,7 @@ class Platform : public QObject {
         void start();
         void stop();
         void resetFPS();
+        QString getErrorMessage();
         uint16_t getFPS();
 
     private:
@@ -31,6 +32,8 @@ class Platform : public QObject {
         uint8_t *romBuffer;
         uint8_t romSizeInBytes;
         uint16_t FPS;
+
+        QString errorMessage;
 
     private slots:
         void executionLoop();

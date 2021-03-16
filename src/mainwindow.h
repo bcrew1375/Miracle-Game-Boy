@@ -26,6 +26,7 @@ class MainWindow : public QMainWindow
     private:
         Ui::MainWindow *ui;
 
+        QTimer *statusBarTimer;
         Platform *platform;
 
     private slots:

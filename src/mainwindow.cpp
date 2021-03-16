@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     setCentralWidget(openGlWidget);
 
     platform = nullptr;
+    statusBarTimer = new QTimer(this);
 }
 
 
@@ -41,13 +42,19 @@ void MainWindow::on_actionOpen_triggered() {
         message.setText("Could not open file: " + romFilename);
         message.exec();
     }
-    else {
+    else if (romHandle.isReadable()) {
         settings.setValue("lastOpenFilePath", QFileInfo(romFilename).path());
+
+        if (platform != nullptr) {
+            delete platform;
+        }
+
+        platform = new Platform(availablePlatforms[ui->SystemType->checkedAction()->text().toStdString()]);
+        platform->loadRomFile(romHandle.readAll());
+
+        delete statusBarTimer;
+        statusBarTimer = new QTimer(this);
     }
-
-    platform = new Platform(availablePlatforms[ui->SystemType->checkedAction()->text().toStdString()]);
-
-    platform->loadRomFile(romHandle.readAll());
 }
 
 
@@ -75,6 +82,11 @@ void MainWindow::on_actionPause_triggered()
 
 
 void MainWindow::statusBarUpdate() {
-    ui->statusbar->showMessage("FPS: " + QString::number(platform->getFPS()));
+    if (platform->getErrorMessage() == "") {
+        ui->statusbar->showMessage("FPS: " + QString::number(platform->getFPS()));
+    }
+    else {
+        ui->statusbar->showMessage("The platform encountered an error of: " + platform->getErrorMessage());
+    }
     platform->resetFPS();
 }

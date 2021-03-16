@@ -10,6 +10,8 @@ Platform::Platform(int systemType) {
     connect(speedRegulationTimer, SIGNAL(timeout()), this, SLOT(executionLoop()));
 
     resetFPS();
+
+    errorMessage = "";
 }
 
 
@@ -42,6 +44,10 @@ void Platform::start() {
 void Platform::executionLoop() {
     // Execute the cycles of the emulated system for one frame.
     system->executeCycles();
+    if (system->getIsRunning() == false) {
+        this->stop();
+        errorMessage = QString::fromStdString(system->getSystemError());
+    }
     FPS++;
 }
 
@@ -59,4 +65,9 @@ uint16_t Platform::getFPS()
 
 void Platform::resetFPS() {
     FPS = 0;
+}
+
+
+QString Platform::getErrorMessage() {
+    return errorMessage;
 }

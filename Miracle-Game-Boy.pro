@@ -12,6 +12,7 @@ SOURCES += \
     src/gbemu/cpu.cpp \
     src/gbemu/display.cpp \
     src/gbemu/instructionset.cpp \
+    src/gbemu/interrupts.cpp \
     src/gbemu/memory.cpp \
     src/gbemu/system.cpp \
     src/main.cpp \
@@ -23,6 +24,7 @@ HEADERS += \
     src/gbemu/cpu.h \
     src/gbemu/cycletables.h \
     src/gbemu/display.h \
+    src/gbemu/interrupts.h \
     src/gbemu/memory.h \
     src/gbemu/system.h \
     src/mainwindow.h \
