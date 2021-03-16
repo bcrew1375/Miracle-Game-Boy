@@ -21,8 +21,8 @@ SOURCES += \
 
 HEADERS += \
     src/gbemu/cpu.h \
+    src/gbemu/cycletables.h \
     src/gbemu/display.h \
-    src/gbemu/instructionset.h \
     src/gbemu/memory.h \
     src/gbemu/system.h \
     src/mainwindow.h \

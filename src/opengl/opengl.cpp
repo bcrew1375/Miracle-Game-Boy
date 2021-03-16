@@ -1,7 +1,8 @@
-#include "opengl.h"
-
 #include <qfile.h>
 #include <iostream>
+
+#include "opengl.h"
+
 
 OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent) {}
 
@@ -88,8 +89,6 @@ void OpenGlWidget::paintGL() {
 
     shaderProgram->release();
     vertexBufferObject->release();
-    //emulatedScreenTexture->release();
-    //emulatedScreenTexture->destroy();
 }
 
 
@@ -102,7 +101,6 @@ void OpenGlWidget::updateTexture(uint8_t *textureData) {
     emulatedScreenTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
     emulatedScreenTexture->allocateStorage();
 
-    //emulatedScreenTexture->setData(QImage("texture.png"));
     emulatedScreenTexture->setData(QOpenGLTexture::PixelFormat::RGBA, QOpenGLTexture::PixelType::UInt32_RGBA8_Rev, textureData);
 }
 
@@ -127,6 +125,5 @@ void OpenGlWidget::updateEmulatedScreen(uint8_t *screenData) {
         textureData[(i * 8) + 6] = 0;
         textureData[(i * 8) + 7] = 0;
     }
-    //emulatedScreenTexture->setData(QOpenGLTexture::PixelFormat::RGBA, QOpenGLTexture::PixelType::UInt32_RGBA8_Rev, &textureData);
     this->updateTexture(textureData);
 }

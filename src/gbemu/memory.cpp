@@ -1,15 +1,15 @@
-#include "memory.h"
-
 #include <iostream>
+
+#include "memory.h"
 
 
 Memory::Memory(uint8_t *romData, uint32_t romSizeInBytes)
 {
     // Ensure the ROM buffer contains at least 32,768 bytes (the minimum to fill both banks).
     if (romSizeInBytes < 0x8000)
-        romBuffer = new uint8_t[0x8000];
+        this->romData = new uint8_t[0x8000];
     else
-        romBuffer = new uint8_t[romSizeInBytes];
+        this->romData = new uint8_t[romSizeInBytes];
 
     // Create all necessary memory space buffers.
     romBank0 = new uint8_t[0x4000];
@@ -23,15 +23,15 @@ Memory::Memory(uint8_t *romData, uint32_t romSizeInBytes)
     highRam = new uint8_t[0x7F];
     interruptEnable = new uint8_t[0x01];
 
-    std::memcpy(romBuffer, romData, romSizeInBytes);
+    std::memcpy(this->romData, romData, romSizeInBytes);
 
     // Load the first 32,768 bytes into the two 16 K ROM banks.
-    std::memcpy(romBank0, &romBuffer[0x0000], 0x4000);
-    std::memcpy(romBank1, &romBuffer[0x4000], 0x4000);
+    std::memcpy(romBank0, &this->romData[0x0000], 0x4000);
+    std::memcpy(romBank1, &this->romData[0x4000], 0x4000);
 }
 
 
-uint8_t Memory::read8bit(uint16_t address)
+uint8_t Memory::readByte(uint16_t address)
 {
     if (address >= 0x0000 && address < 0x4000) {
         return romBank0[address];
@@ -76,20 +76,22 @@ uint8_t Memory::read8bit(uint16_t address)
 }
 
 
-uint8_t Memory::read16bit(uint16_t address)
+uint16_t Memory::read16bit(uint16_t address)
 {
     return 0;
 }
 
 
-void Memory::write8bit(uint16_t address, uint8_t data)
+void Memory::writeByte(uint16_t address, uint8_t data)
 {
     // Writing to ROM bank 1 has no effect but leave this here for completion's sake.
     if (address >= 0x0000 && address < 0x4000) {
+
     }
 
     // Depending on the cartridge type, writing here may replace ROM bank 1 for the bank indicated by the written value;
     else if (address < 0x8000) {
+
     }
 
     else if (address < 0xA000) {

@@ -1,12 +1,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QBuffer>
 #include <QSettings>
 #include <QMainWindow>
+
+#include "platform.h"
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -21,6 +23,11 @@ class MainWindow : public QMainWindow
         MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
 
+    private:
+        Ui::MainWindow *ui;
+
+        Platform *platform;
+
     private slots:
         void on_actionOpen_triggered();
 
@@ -28,8 +35,10 @@ class MainWindow : public QMainWindow
 
         void on_actionRun_triggered();
 
-private:
-        Ui::MainWindow *ui;
+        void on_actionPause_triggered();
+
+        void statusBarUpdate();
+
 };
 
 #endif // MAINWINDOW_H

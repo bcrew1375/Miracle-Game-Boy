@@ -3,7 +3,6 @@
 
 #include "ui_mainwindow.h"
 
-#include "platform.h"
 #include "platformsmap.h"
 
 
@@ -14,6 +13,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     openGlWidget = new OpenGlWidget(this); //(QOpenGLWidget *) this->ui->centralwidget;
     setCentralWidget(openGlWidget);
+
+    platform = nullptr;
 }
 
 
@@ -23,7 +24,6 @@ MainWindow::~MainWindow() {
 
 
 void MainWindow::on_actionOpen_triggered() {
-    Platform *platform;
     QString romFileFilter;
     QString romFilename;
 
@@ -58,4 +58,23 @@ void MainWindow::on_actionExit_triggered() {
 
 void MainWindow::on_actionRun_triggered()
 {
+    if (platform != nullptr) {
+        QTimer *statusBarTimer = new QTimer(this);
+        connect(statusBarTimer, SIGNAL(timeout()), this, SLOT(statusBarUpdate()));
+        statusBarTimer->start(1000);
+        platform->start();
+    }
+}
+
+
+void MainWindow::on_actionPause_triggered()
+{
+    if (platform != nullptr)
+        platform->stop();
+}
+
+
+void MainWindow::statusBarUpdate() {
+    ui->statusbar->showMessage("FPS: " + QString::number(platform->getFPS()));
+    platform->resetFPS();
 }
