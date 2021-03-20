@@ -8,6 +8,7 @@
 #include <QMainWindow>
 
 #include "platform.h"
+#include "opengl/opengl.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -23,23 +24,23 @@ class MainWindow : public QMainWindow
         MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
 
+    public slots:
+
     private:
         Ui::MainWindow *ui;
+        OpenGlWidget *openGlWidget;
 
         QTimer *statusBarTimer;
         Platform *platform;
 
     private slots:
         void on_actionOpen_triggered();
-
         void on_actionExit_triggered();
-
         void on_actionRun_triggered();
-
         void on_actionPause_triggered();
 
+        void emulatedScreenUpdate();
         void statusBarUpdate();
-
 };
 
 #endif // MAINWINDOW_H

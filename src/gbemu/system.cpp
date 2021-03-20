@@ -5,10 +5,11 @@
 
 System::System(uint8_t *romData, uint32_t romSizeInBytes)
 {
-    memory = new Memory(romData, romSizeInBytes);
-    cpu = new CPU(memory);
+    ioPorts = new IOPorts();
+    memory = new Memory(romData, romSizeInBytes, ioPorts);
+    cpu = new CPU(memory, ioPorts);
     interrupts = new Interrupts(memory, cpu);
-    display = new Display();
+    display = new Display(memory->getVideoRamPointer(), memory->getSpriteAttributeTablePointer(), ioPorts);
 
     clockSpeed = 4194304;
     displayRefreshRate = 59.73;
@@ -18,36 +19,29 @@ System::System(uint8_t *romData, uint32_t romSizeInBytes)
 }
 
 
-/*void System::runSystem(bool systemRunning) {
-    this->systemRunning = systemRunning;
-}*/
-
-
-/*bool System::isRunning() {
-    return systemRunning;
-}*/
-
-
-double System::getRefreshRate() {
-    return displayRefreshRate;
-}
-
-
 void System::executeCycles() {
     cyclesLeftToRun = cyclesPerFrame;
 
     while (cyclesLeftToRun > 0) {
-        cyclesBeforeExecution = cyclesLeftToRun;
         previousOpcode = cpu->getOpcode();
         previousPC = cpu->getRegisterPC();
-        cyclesLeftToRun -= cpu->execute();
+
+        cyclesExecuted = cpu->execute();
+
         // If the CPU ran 0 cycles, it encountered an invalid opcode and has to be terminated.
-        if (cyclesBeforeExecution == cyclesLeftToRun) {
+        if (cyclesExecuted == 0) {
             isRunning = false;
             systemError = "Invalid opcode: " + std::to_string(previousOpcode) + " at PC: " + std::to_string(previousPC);
         }
+
+        ioPorts->updateRegisters(cyclesExecuted);
+        if (ioPorts->getHBlankBeginFlag() == true)
+            display->createScanline();
+        cpu->handleInterrupts();
+
+        cyclesLeftToRun -= cyclesExecuted;
     }
-    cyclesLeftToRun = 0;
+    display->updateDisplayOutput();
 }
 
 
@@ -57,7 +51,18 @@ bool System::getIsRunning()
 }
 
 
+double System::getRefreshRate() {
+    return displayRefreshRate;
+}
+
+
 std::string System::getSystemError()
 {
     return systemError;
+}
+
+
+uint32_t *System::getFrameBuffer()
+{
+    return display->getFrameBuffer();
 }

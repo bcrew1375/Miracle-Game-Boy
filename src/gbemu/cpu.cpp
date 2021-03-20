@@ -2,10 +2,10 @@
 #include "cycletables.h"
 
 
-
-CPU::CPU(Memory *memory)
+CPU::CPU(Memory *memory, IOPorts *ioPorts)
 {
     this->memory = memory;
+    this->ioPorts = ioPorts;
     this->resetCPU();
 }
 
@@ -19,7 +19,7 @@ void CPU::resetCPU() {
     registers.SP = 0xFFFE;
     registers.PC = 0x0100; // PC would normally start at 0x0000, but assume the boot rom is not present.
 
-    memory->writeByte(0xFF05, 0x00); // TIMA
+    /*memory->writeByte(0xFF05, 0x00); // TIMA
     memory->writeByte(0xFF06, 0x00); // TMA
     memory->writeByte(0xFF07, 0x00); // TAC
     memory->writeByte(0xFF10, 0x80); // NR10
@@ -39,18 +39,22 @@ void CPU::resetCPU() {
     memory->writeByte(0xFF24, 0x77); // NR50
     memory->writeByte(0xFF25, 0xF3); // NR51
     memory->writeByte(0xFF26, 0xF1); // [$FF26] = $F1-GB, $F0-SGB ; NR52
-    memory->writeByte(0xFF40, 0x91); // LCDC
-    memory->writeByte(0xFF42, 0x00); // SCY
-    memory->writeByte(0xFF43, 0x00); // SCX
-    memory->writeByte(0xFF45, 0x00); // LYC
-    memory->writeByte(0xFF47, 0xFC); // BGP
-    memory->writeByte(0xFF48, 0xFF); // OBP0
-    memory->writeByte(0xFF49, 0xFF); // OBP1
-    memory->writeByte(0xFF4A, 0x00); // WY
-    memory->writeByte(0xFF4B, 0x00); // WX
-    memory->writeByte(0xFFFF, 0x00); // IE
+    memory->writeByte(0xFF40, 0x91); // LCD Control
+    memory->writeByte(0xFF41, 0x02); // LCD STAT
+    memory->writeByte(0xFF42, 0x00); // Scroll Y
+    memory->writeByte(0xFF43, 0x00); // Scroll X
+    memory->writeByte(0xFF44, 0x99); // LCD Y Coordinate
+    memory->writeByte(0xFF45, 0x00); // LCD Y Compare
+    memory->writeByte(0xFF47, 0xFC); // BG Palette
+    memory->writeByte(0xFF48, 0xFF); // Object Palette 0
+    memory->writeByte(0xFF49, 0xFF); // Object Palette 1
+    memory->writeByte(0xFF4A, 0x00); // Window Y
+    memory->writeByte(0xFF4B, 0x00); // Window X
+    memory->writeByte(0xFFFF, 0x00); // Interrupt Enable*/
 
     interruptMasterEnableFlag = false;
+    stopped = false;
+    halted = false;
 }
 
 
@@ -60,21 +64,95 @@ uint16_t CPU::getRegisterPC()
 }
 
 
+void CPU::handleInterrupts()
+{
+    uint8_t enabledInterruptFlags = memory->readByte(0xFFFF);
+    uint8_t interruptRequestFlags = ioPorts->getInterruptRequestFlags();
+
+    if (getInterruptMasterEnableFlag() == true) {
+        if (((interruptRequestFlags & 0x01)) && ((enabledInterruptFlags & 0x01))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0E);
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0040;
+            setInterruptMasterEnableFlag(false);
+            halted = false;
+        }
+    }
+    else if (getInterruptMasterEnableFlag() == true) {
+        if (((interruptRequestFlags & 0x02)) && ((enabledInterruptFlags & 0x02))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0D);
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0048;
+            setInterruptMasterEnableFlag(false);
+            halted = false;
+        }
+    }
+    else if (getInterruptMasterEnableFlag() == true) {
+        if (((interruptRequestFlags & 0x04)) && ((enabledInterruptFlags & 0x04))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0B);
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0050;
+            setInterruptMasterEnableFlag(false);
+            halted = false;
+        }
+    }
+    else if (getInterruptMasterEnableFlag() == true) {
+        if (((interruptRequestFlags & 0x08)) && ((enabledInterruptFlags & 0x08))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x07);
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0058;
+            setInterruptMasterEnableFlag(false);
+            halted = false;
+        }
+    }
+    else if (getInterruptMasterEnableFlag() == true) {
+        if (((interruptRequestFlags & 0x10)) && ((enabledInterruptFlags & 0x10))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0F);
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0060;
+            setInterruptMasterEnableFlag(false);
+            halted = false;
+        }
+    }
+}
+
+
 uint8_t CPU::getOpcode()
 {
     return opcode;
 }
 
-bool CPU::getInterupptMasterEnableFlag()
+
+bool CPU::getInterruptMasterEnableFlag()
 {
     return interruptMasterEnableFlag;
 }
 
 
+void CPU::setInterruptMasterEnableFlag(bool state)
+{
+    interruptMasterEnableFlag = state;
+}
+
+
 uint32_t CPU::execute() {
+    uint8_t cbOpcode;
+    if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC > 0xE000) && (registers.PC < 0xFF80)))
+        int j = 0;
+
+    if (registers.PC == 0x5f70)
+        int j = 0;
+
     opcode = memory->readByte(registers.PC);
     clockCyclesExecuted = clockCyclesTable[opcode];
-    registers.PC++;
+
+    if (stopped == false) {
+        if (halted == false)
+            registers.PC++;
+    }
+    else {
+        int h = 0;
+    }
 
     switch (opcode) {
     case 0x00: z80_nop(); break;
@@ -189,13 +267,13 @@ uint32_t CPU::execute() {
     case 0x6D: z80_ld_reg8_reg8(&registers.L, &registers.L); break;
     case 0x6E: z80_ld_reg8_reghl_addr16(&registers.L); break;
     case 0x6F: z80_ld_reg8_reg8(&registers.L, &registers.A); break;
-    case 0x70: z80_ld_reghl_addr16_reg8(&registers.B);
-    case 0x71: z80_ld_reghl_addr16_reg8(&registers.C);
-    case 0x72: z80_ld_reghl_addr16_reg8(&registers.D);
-    case 0x73: z80_ld_reghl_addr16_reg8(&registers.E);
-    case 0x74: z80_ld_reghl_addr16_reg8(&registers.H);
-    case 0x75: z80_ld_reghl_addr16_reg8(&registers.L);
-    case 0x76: z80_halt();
+    case 0x70: z80_ld_reghl_addr16_reg8(&registers.B); break;
+    case 0x71: z80_ld_reghl_addr16_reg8(&registers.C); break;
+    case 0x72: z80_ld_reghl_addr16_reg8(&registers.D); break;
+    case 0x73: z80_ld_reghl_addr16_reg8(&registers.E); break;
+    case 0x74: z80_ld_reghl_addr16_reg8(&registers.H); break;
+    case 0x75: z80_ld_reghl_addr16_reg8(&registers.L); break;
+    case 0x76: z80_halt(); break;
     case 0x77: z80_ld_reghl_addr16_reg8(&registers.A); break;
     case 0x78: z80_ld_reg8_reg8(&registers.A, &registers.B); break;
     case 0x79: z80_ld_reg8_reg8(&registers.A, &registers.C); break;
@@ -280,7 +358,16 @@ uint32_t CPU::execute() {
     case 0xC8: z80_ret_z(); break;
     case 0xC9: z80_ret(); break;
     case 0xCA: z80_jp_z(); break;
-    //case 0xCB: z80_nop(); break; // Unimplemented
+    case 0xCB: {
+        cbOpcode = memory->readByte(registers.PC);
+
+        switch (cbOpcode) {
+        case 0x11: z80_cb_rl_reg8(&registers.C); break;
+        case 0x7C: z80_cb_test_reg8_bit7(&registers.H); break;
+        }
+
+        registers.PC++;
+    } break;
     case 0xCC: z80_call_z(); break;
     case 0xCD: z80_call(); break;
     case 0xCE: z80_adc_rega_dat8(); break;
@@ -288,40 +375,40 @@ uint32_t CPU::execute() {
     case 0xD0: z80_ret_nc(); break;
     case 0xD1: z80_pop_reg16(&registers.DE); break;
     case 0xD2: z80_jp_nc(); break;
-    case 0xD3: /* Undefined */ break;
+    case 0xD3: return 0; break;
     case 0xD4: z80_call_nc(); break;
     case 0xD5: z80_push_reg16(&registers.DE); break;
-    case 0xD6: z80_add_rega_dat8(); break;
+    case 0xD6: z80_sub_rega_dat8(); break;
     case 0xD7: z80_rst(0x10); break;
     case 0xD8: z80_ret_c(); break;
     case 0xD9: z80_reti(); break;
     case 0xDA: z80_jp_c(); break;
-    case 0xDB: /* Undefined */ break; // Unimplemented
+    case 0xDB: return 0; break;
     case 0xDC: z80_call_c(); break;
-    case 0xDD: /* Undefined */; break;
+    case 0xDD: return 0; break;
     case 0xDE: z80_sbc_rega_dat8(); break;
     case 0xDF: z80_rst(0x18); break;
     case 0xE0: z80_ldh_addr8_rega(); break;
     case 0xE1: z80_pop_reg16(&registers.DE); break;
     case 0xE2: z80_ld_regc_port_rega(); break;
-    case 0xE3: /* Undefined */ break;
-    case 0xE4: /* Undefined */ break;
+    case 0xE3: return 0; break;
+    case 0xE4: return 0; break;
     case 0xE5: z80_push_reg16(&registers.HL); break;
     case 0xE6: z80_rega_and_dat8(); break;
     case 0xE7: z80_rst(0x20); break;
     case 0xE8: z80_add_sp_dat8(); break;
-    case 0xE9: z80_jp_reghl_addr16(); break;
+    case 0xE9: z80_jp_reghl(); break;
     case 0xEA: z80_ld_addr16_rega(); break;
-    case 0xEB: /* Undefined */ break;
-    case 0xEC: /* Undefined */ break;
-    case 0xED: /* Undefined */ break;
+    case 0xEB: return 0; break;
+    case 0xEC: return 0; break;
+    case 0xED: return 0; break;
     case 0xEE: z80_rega_xor_dat8(); break;
     case 0xEF: z80_rst(0x28); break;
     case 0xF0: z80_ldh_rega_addr8(); break;
     case 0xF1: z80_pop_reg16(&registers.HL); break;
     case 0xF2: z80_ld_rega_regc_port(); break;
     case 0xF3: z80_di(); break;
-    case 0xF4: /* Undefined */ break;
+    case 0xF4: return 0; break;
     case 0xF5: z80_push_reg16(&registers.AF); break;
     case 0xF6: z80_rega_or_dat8(); break;
     case 0xF7: z80_rst(0x30); break;
@@ -329,8 +416,8 @@ uint32_t CPU::execute() {
     case 0xF9: z80_ld_sp_reghl(); break;
     case 0xFA: z80_ld_rega_addr16(); break;
     case 0xFB: z80_ei(); break;
-    case 0xFC: /* Undefined */ break;
-    case 0xFD: /* Undefined */ break;
+    case 0xFC: return 0; break;
+    case 0xFD: return 0; break;
     case 0xFE: z80_rega_cp_dat8(); break;
     case 0xFF: z80_rst(0x38); break;
     }

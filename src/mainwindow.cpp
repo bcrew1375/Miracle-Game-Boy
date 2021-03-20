@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include "opengl/opengl.h"
 
 #include "ui_mainwindow.h"
 
@@ -7,7 +6,6 @@
 
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
-    OpenGlWidget *openGlWidget;
 
     ui->setupUi(this);
 
@@ -15,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     setCentralWidget(openGlWidget);
 
     platform = nullptr;
-    statusBarTimer = new QTimer(this);
+    statusBarTimer = nullptr;
 }
 
 
@@ -49,11 +47,18 @@ void MainWindow::on_actionOpen_triggered() {
             delete platform;
         }
 
+        if (statusBarTimer != nullptr) {
+            delete statusBarTimer;
+        }
+
         platform = new Platform(availablePlatforms[ui->SystemType->checkedAction()->text().toStdString()]);
+
         platform->loadRomFile(romHandle.readAll());
 
-        delete statusBarTimer;
         statusBarTimer = new QTimer(this);
+
+        connect(platform, SIGNAL(screenUpdate()), this, SLOT(emulatedScreenUpdate()));
+        connect(statusBarTimer, SIGNAL(timeout()), this, SLOT(statusBarUpdate()));
     }
 }
 
@@ -66,8 +71,6 @@ void MainWindow::on_actionExit_triggered() {
 void MainWindow::on_actionRun_triggered()
 {
     if (platform != nullptr) {
-        QTimer *statusBarTimer = new QTimer(this);
-        connect(statusBarTimer, SIGNAL(timeout()), this, SLOT(statusBarUpdate()));
         statusBarTimer->start(1000);
         platform->start();
     }
@@ -89,4 +92,10 @@ void MainWindow::statusBarUpdate() {
         ui->statusbar->showMessage("The platform encountered an error of: " + platform->getErrorMessage());
     }
     platform->resetFPS();
+}
+
+
+void MainWindow::emulatedScreenUpdate()
+{
+    openGlWidget->updateEmulatedScreen(platform->getFrameBuffer());
 }

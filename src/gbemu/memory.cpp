@@ -1,15 +1,18 @@
 #include <iostream>
 
 #include "memory.h"
+#include "ioports.h"
 
 
-Memory::Memory(uint8_t *romData, uint32_t romSizeInBytes)
+Memory::Memory(uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts)
 {
     // Ensure the ROM buffer contains at least 32,768 bytes (the minimum to fill both banks).
     if (romSizeInBytes < 0x8000)
         this->romData = new uint8_t[0x8000];
     else
         this->romData = new uint8_t[romSizeInBytes];
+
+    this->ioPorts = ioPorts;
 
     // Create all necessary memory space buffers.
     romBank0 = new uint8_t[0x4000];
@@ -19,9 +22,18 @@ Memory::Memory(uint8_t *romData, uint32_t romSizeInBytes)
     internalRamBank0 = new uint8_t[0x1000];
     internalRamBank1 = new uint8_t[0x1000];
     spriteAttributeTable = new uint8_t[0xA0];
-    ioRegisters = new uint8_t[0x80];
     highRam = new uint8_t[0x7F];
     interruptEnable = new uint8_t[0x01];
+
+    memset(romBank0, 0xFF, 0x4000);
+    memset(romBank1, 0xFF, 0x4000);
+    memset(videoRam, 0xFF, 0x2000);
+    memset(externalRam, 0xFF, 0x1000);
+    memset(internalRamBank0, 0xFF, 0x1000);
+    memset(internalRamBank1, 0xFF, 0x1000);
+    memset(spriteAttributeTable, 0xFF, 0xA0);
+    memset(highRam, 0xFF, 0x7F);
+    memset(interruptEnable, 0xFF, 0x01);
 
     std::memcpy(this->romData, romData, romSizeInBytes);
 
@@ -33,7 +45,7 @@ Memory::Memory(uint8_t *romData, uint32_t romSizeInBytes)
 
 uint8_t Memory::readByte(uint16_t address)
 {
-    if (address >= 0x0000 && address < 0x4000) {
+    if (address < 0x4000) {
         return romBank0[address];
     }
     else if (address < 0x8000) {
@@ -63,7 +75,22 @@ uint8_t Memory::readByte(uint16_t address)
         return 0xFF;
     }
     else if (address < 0xFF80) {
-        return ioRegisters[address - 0xFF00];
+        switch (address) {
+        case 0xFF01: return ioPorts->getSerialTransferData(); break;
+        case 0xFF02: return ioPorts->getSerialTransferControl(); break;
+        case 0xFF04: return ioPorts->getDivider(); break;
+        case 0xFF05: return ioPorts->getTimerCounter(); break;
+        case 0xFF06: return ioPorts->getTimerModulo(); break;
+        case 0xFF07: return ioPorts->getTimerControl();
+        case 0xFF0F: return ioPorts->getInterruptRequestFlags(); break;
+        case 0xFF40: return ioPorts->getLcdControl(); break;
+        case 0xFF41: return ioPorts->getLcdStatus(); break;
+        case 0xFF42: return ioPorts->getScrollY(); break;
+        case 0xFF43: return ioPorts->getScrollX(); break;
+        case 0xFF44: return ioPorts->getLcdYCoordinate(); break;
+        case 0xFF45: return ioPorts->getLcdYCompare(); break;
+        default: return 0; break;
+        }
     }
     else if (address < 0xFFFE) {
         return highRam[address - 0xFF80];
@@ -73,12 +100,6 @@ uint8_t Memory::readByte(uint16_t address)
     }
     else
         return 0xFF;
-}
-
-
-uint16_t Memory::read16bit(uint16_t address)
-{
-    return 0;
 }
 
 
@@ -92,6 +113,10 @@ void Memory::writeByte(uint16_t address, uint8_t data)
     // Depending on the cartridge type, writing here may replace ROM bank 1 for the bank indicated by the written value;
     else if (address < 0x8000) {
 
+    }
+
+    else if (address < 0x9800) {
+        videoRam[address - 0x8000] = data;
     }
 
     else if (address < 0xA000) {
@@ -125,7 +150,22 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 
     // Writing to this space will have various effects depending on the register written to.
     else if (address < 0xFF80) {
-        ioRegisters[address - 0xFF00] = data;
+        switch (address) {
+        case 0xFF01: ioPorts->setSerialTransferData(data); break;
+        case 0xFF02: ioPorts->setSerialTransferControl(data); break;
+        case 0xFF04: ioPorts->setDivider(data); break;
+        case 0xFF05: ioPorts->setTimerCounter(data); break;
+        case 0xFF06: ioPorts->setTimerModulo(data); break;
+        case 0xFF07: ioPorts->setTimerControl(data); break;
+        case 0xFF0F: ioPorts->setInterruptRequestFlags(data); break;
+        case 0xFF40: ioPorts->setLcdControl(data); break;
+        case 0xFF41: ioPorts->setLcdStatus(data); break;
+        case 0xFF42: ioPorts->setScrollY(data); break;
+        case 0xFF43: ioPorts->setScrollX(data); break;
+        case 0xFF44: ioPorts->setLcdYCoordinate(data); break;
+        case 0xFF45: ioPorts->setLcdYCompare(data); break;
+        default: return; break;
+        }
     }
 
     else if (address < 0xFFFE) {
@@ -134,7 +174,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 
     // The 3 most significant bits of the IME are unwrittable and are always high.
     else if (address == 0xFFFF) {
-        interruptEnable[0] = (data & 0x1F) | 0b11100000;
+        interruptEnable[0] = (data & 0x1F) | 0xE0;
     }
 }
 
@@ -142,4 +182,23 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 void Memory::write16bit(uint16_t address, uint16_t data)
 {
 
+}
+
+
+uint8_t *Memory::getSpriteAttributeTablePointer()
+{
+    return spriteAttributeTable;
+}
+
+
+uint8_t *Memory::getIoRegistersPointer()
+{
+    //return ioPortRegisters;
+    return 0;
+}
+
+
+uint8_t *Memory::getVideoRamPointer()
+{
+    return videoRam;
 }

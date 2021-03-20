@@ -8,6 +8,7 @@
 Platform::Platform(int systemType) {
     speedRegulationTimer = new QTimer(this);
     connect(speedRegulationTimer, SIGNAL(timeout()), this, SLOT(executionLoop()));
+//    connect(speedRegulationTimer, SIGNAL(timeout()), this->parent(), SLOT(emulatedScreenUpdate()));
 
     resetFPS();
 
@@ -49,6 +50,7 @@ void Platform::executionLoop() {
         errorMessage = QString::fromStdString(system->getSystemError());
     }
     FPS++;
+    emit screenUpdate();
 }
 
 
@@ -60,6 +62,11 @@ void Platform::stop() {
 uint16_t Platform::getFPS()
 {
     return FPS;
+}
+
+uint32_t *Platform::getFrameBuffer()
+{
+    return system->getFrameBuffer();
 }
 
 

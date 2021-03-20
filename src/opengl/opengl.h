@@ -16,7 +16,7 @@ public:
     OpenGlWidget(QWidget *parent);
 
     void clearEmulatedScreen();
-    void updateEmulatedScreen(uint8_t *screenData);
+    void updateEmulatedScreen(uint32_t *screenData);
 
 protected:
     void initializeGL() override;

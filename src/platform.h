@@ -25,6 +25,7 @@ class Platform : public QObject {
         void resetFPS();
         QString getErrorMessage();
         uint16_t getFPS();
+        uint32_t *getFrameBuffer();
 
     private:
         System *system;
@@ -37,6 +38,9 @@ class Platform : public QObject {
 
     private slots:
         void executionLoop();
+
+    signals:
+        void screenUpdate();
 };
 
 #endif // PLATFORM_H

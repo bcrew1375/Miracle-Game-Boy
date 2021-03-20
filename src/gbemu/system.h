@@ -5,6 +5,7 @@
 #include "memory.h"
 #include "display.h"
 #include "interrupts.h"
+#include "ioports.h"
 
 #include <stdint.h>
 #include <string>
@@ -19,12 +20,15 @@ class System
         void executeCycles();
         bool getIsRunning();
         std::string getSystemError();
+        uint32_t *getFrameBuffer();
+        void handleInterrupts();
 
     private:
         Memory *memory;
         CPU *cpu;
         Interrupts *interrupts;
         Display *display;
+        IOPorts *ioPorts;
 
         bool isRunning;
         std::string systemError;
@@ -34,7 +38,7 @@ class System
         double displayRefreshRate;
 
         int32_t cyclesLeftToRun;
-        int32_t cyclesBeforeExecution;
+        uint32_t cyclesExecuted;
         uint8_t previousOpcode;
         uint16_t previousPC;
 };
