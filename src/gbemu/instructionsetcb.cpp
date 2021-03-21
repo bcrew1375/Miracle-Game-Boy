@@ -3,7 +3,9 @@
 
 void CPU::z80_cb_rl_reg8(uint8_t *reg8)
 {
-    *reg8 = ((*reg8 & 0x80) >> 7) | (*reg8 << 1);
+    bool carry = registers.flagC;
+    registers.flagC = *reg8 & 0x80;
+    *reg8 = (*reg8 << 1) | carry;
 
     if (*reg8 == 0)
         registers.flagZ = true;

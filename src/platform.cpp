@@ -16,8 +16,15 @@ Platform::Platform(int systemType) {
 }
 
 
-void Platform::loadRomFile(QByteArray romData) {
-    system = new System((uint8_t *)romData.constData(), romData.size());
+Platform::~Platform()
+{
+    delete speedRegulationTimer;
+    delete system;
+}
+
+
+void Platform::loadRomFile(QByteArray bootROM, QByteArray romData) {
+    system = new System((uint8_t *)bootROM.constData(), (uint8_t *)romData.constData(), romData.size());
 }
 
 
@@ -50,7 +57,7 @@ void Platform::executionLoop() {
         errorMessage = QString::fromStdString(system->getSystemError());
     }
     FPS++;
-    emit screenUpdate();
+//    emit screenUpdate();
 }
 
 

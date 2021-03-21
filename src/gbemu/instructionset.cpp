@@ -3,9 +3,7 @@
 
 void CPU::z80_adc_rega_dat8()
 {
-    uint8_t data = memory->readByte(registers.PC);
-    uint16_t result = registers.A + data + registers.flagC;
-
+    int16_t result = registers.A + memory->readByte(registers.PC) + registers.flagC;
     registers.PC++;
 
     registers.A = (uint8_t)result;
@@ -64,7 +62,7 @@ void CPU::z80_add_rega_dat8()
     registers.PC++;
     registers.A = result;
 
-    if (result == 0)
+    if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
@@ -81,7 +79,7 @@ void CPU::z80_add_rega_reg8(uint8_t *reg8)
     int16_t result = registers.A + *reg8;
     registers.A = result;
 
-    if (result == 0)
+    if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
@@ -98,7 +96,7 @@ void CPU::z80_add_rega_reghl_addr16()
     int16_t result = registers.A + memory->readByte(registers.HL);
     registers.A = result;
 
-    if (result == 0)
+    if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
@@ -308,7 +306,7 @@ void CPU::z80_inc_reghl_addr16()
 
     registers.flagN = false;
 
-    if (data == 0x0F)
+    if (data == 0x10)
         registers.flagH = true;
     else
         registers.flagH = false;
@@ -352,9 +350,9 @@ void CPU::z80_jp_nz()
 
 void CPU::z80_jp_reghl()
 {
-    registers.PCl = memory->readByte(registers.HL);
-    registers.PCh = memory->readByte(registers.HL + 1);
-    //registers.PC = registers.HL;
+    //registers.PCl = memory->readByte(registers.HL);
+    //registers.PCh = memory->readByte(registers.HL + 1);
+    registers.PC = registers.HL;
 }
 
 
@@ -362,7 +360,7 @@ void CPU::z80_jp_z()
 {
     registers.PC += 2;
     if (registers.flagZ == true) {
-        registers.PC += memory->readByte(registers.PC - 2) + (memory->readByte(registers.PC - 1) << 8);
+        registers.PC = memory->readByte(registers.PC - 2) + (memory->readByte(registers.PC - 1) << 8);
         clockCyclesExecuted += 4;
     }
 }
@@ -434,6 +432,7 @@ void CPU::z80_ld_addr16_sp()
 {
     uint16_t address = memory->readByte(registers.PC) + (memory->readByte(registers.PC + 1) << 8);
     registers.PC += 2;
+
     memory->writeByte(address, registers.SPl);
     memory->writeByte(address + 1, registers.SPh);
 }
@@ -858,8 +857,8 @@ void CPU::z80_rst(uint8_t addr8)
 void CPU::z80_sbc_rega_dat8()
 {
     int16_t result = registers.A - (memory->readByte(registers.PC) + registers.flagC);
-    registers.A = result;
     registers.PC++;
+    registers.A = result;
 
     if (registers.A == 0)
         registers.flagZ = true;
@@ -924,20 +923,19 @@ void CPU::z80_stop()
 
 void CPU::z80_sub_rega_dat8()
 {
-    uint8_t data = memory->readByte(registers.PC);
+    int16_t result = registers.A - memory->readByte(registers.PC);
     registers.PC++;
+    registers.A = result;
 
-    if ((registers.A - data) == 0)
+    if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
 
-    if ((registers.A - data) < 0)
+    if (result < 0)
         registers.flagC = true;
     else
         registers.flagC = false;
-
-    registers.A -= data;
 }
 
 

@@ -14,11 +14,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     platform = nullptr;
     statusBarTimer = nullptr;
+    screenUpdateTimer = nullptr;
 }
 
 
 MainWindow::~MainWindow() {
     delete ui;
+
+    delete openGlWidget;
+    delete platform;
+    delete statusBarTimer;
 }
 
 
@@ -32,8 +37,10 @@ void MainWindow::on_actionOpen_triggered() {
     romFilename = QFileDialog::getOpenFileName(nullptr, "Open ROM", settings.value("lastOpenFilePath").toString(), romFileFilter);
 
     QFile romHandle(romFilename);
+    QFile bootROM("E:/G Drive Backup/Roms/GoodGBx_202_GoodMerged-GRH.se/test roms/dmg_boot.bin");
 
     romHandle.open(QIODevice::ReadOnly);
+    bootROM.open(QIODevice::ReadOnly);
 
     if (romFilename != "" && !romHandle.isReadable()) {
         QMessageBox message;
@@ -43,22 +50,24 @@ void MainWindow::on_actionOpen_triggered() {
     else if (romHandle.isReadable()) {
         settings.setValue("lastOpenFilePath", QFileInfo(romFilename).path());
 
-        if (platform != nullptr) {
+        if (platform != nullptr)
             delete platform;
-        }
 
-        if (statusBarTimer != nullptr) {
+        if (statusBarTimer != nullptr)
             delete statusBarTimer;
-        }
+
+        if (screenUpdateTimer != nullptr)
+            delete screenUpdateTimer;
 
         platform = new Platform(availablePlatforms[ui->SystemType->checkedAction()->text().toStdString()]);
-
-        platform->loadRomFile(romHandle.readAll());
-
         statusBarTimer = new QTimer(this);
+        screenUpdateTimer = new QTimer(this);
 
-        connect(platform, SIGNAL(screenUpdate()), this, SLOT(emulatedScreenUpdate()));
+        platform->loadRomFile(bootROM.readAll(), romHandle.readAll());
+
+        //connect(platform, SIGNAL(screenUpdate()), this, SLOT(emulatedScreenUpdate()));
         connect(statusBarTimer, SIGNAL(timeout()), this, SLOT(statusBarUpdate()));
+        connect(screenUpdateTimer, SIGNAL(timeout()), this, SLOT(emulatedScreenUpdate()));
     }
 }
 
@@ -72,6 +81,7 @@ void MainWindow::on_actionRun_triggered()
 {
     if (platform != nullptr) {
         statusBarTimer->start(1000);
+        screenUpdateTimer->start(16);
         platform->start();
     }
 }

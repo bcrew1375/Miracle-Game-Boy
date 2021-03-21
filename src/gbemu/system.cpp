@@ -3,10 +3,10 @@
 #include "system.h"
 
 
-System::System(uint8_t *romData, uint32_t romSizeInBytes)
+System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes)
 {
     ioPorts = new IOPorts();
-    memory = new Memory(romData, romSizeInBytes, ioPorts);
+    memory = new Memory(bootROM, romData, romSizeInBytes, ioPorts);
     cpu = new CPU(memory, ioPorts);
     interrupts = new Interrupts(memory, cpu);
     display = new Display(memory->getVideoRamPointer(), memory->getSpriteAttributeTablePointer(), ioPorts);
@@ -16,6 +16,16 @@ System::System(uint8_t *romData, uint32_t romSizeInBytes)
     cyclesPerFrame = clockSpeed / displayRefreshRate;
 
     isRunning = true;
+}
+
+
+System::~System()
+{
+    delete ioPorts;
+    delete memory;
+    delete cpu;
+    delete interrupts;
+    delete display;
 }
 
 

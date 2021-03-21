@@ -71,41 +71,33 @@ void CPU::handleInterrupts()
 
     if (getInterruptMasterEnableFlag() == true) {
         if (((interruptRequestFlags & 0x01)) && ((enabledInterruptFlags & 0x01))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0E);
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1E);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0040;
             setInterruptMasterEnableFlag(false);
             halted = false;
         }
-    }
-    else if (getInterruptMasterEnableFlag() == true) {
-        if (((interruptRequestFlags & 0x02)) && ((enabledInterruptFlags & 0x02))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0D);
+        else if (((interruptRequestFlags & 0x02)) && ((enabledInterruptFlags & 0x02))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1D);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0048;
             setInterruptMasterEnableFlag(false);
             halted = false;
         }
-    }
-    else if (getInterruptMasterEnableFlag() == true) {
-        if (((interruptRequestFlags & 0x04)) && ((enabledInterruptFlags & 0x04))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0B);
+        else if (((interruptRequestFlags & 0x04)) && ((enabledInterruptFlags & 0x04))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1B);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0050;
             setInterruptMasterEnableFlag(false);
             halted = false;
         }
-    }
-    else if (getInterruptMasterEnableFlag() == true) {
-        if (((interruptRequestFlags & 0x08)) && ((enabledInterruptFlags & 0x08))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x07);
+        else if (((interruptRequestFlags & 0x08)) && ((enabledInterruptFlags & 0x08))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x17);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0058;
             setInterruptMasterEnableFlag(false);
             halted = false;
         }
-    }
-    else if (getInterruptMasterEnableFlag() == true) {
         if (((interruptRequestFlags & 0x10)) && ((enabledInterruptFlags & 0x10))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0F);
             z80_push_reg16(&registers.PC);
@@ -137,10 +129,10 @@ void CPU::setInterruptMasterEnableFlag(bool state)
 
 uint32_t CPU::execute() {
     uint8_t cbOpcode;
-    if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC > 0xE000) && (registers.PC < 0xFF80)))
+    if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC > 0xE000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
         int j = 0;
 
-    if (registers.PC == 0x5f70)
+    if (registers.PC == 0x2fa)
         int j = 0;
 
     opcode = memory->readByte(registers.PC);
@@ -151,7 +143,7 @@ uint32_t CPU::execute() {
             registers.PC++;
     }
     else {
-        int h = 0;
+        // TO DO: Handle stopped condition.
     }
 
     switch (opcode) {
@@ -389,7 +381,7 @@ uint32_t CPU::execute() {
     case 0xDE: z80_sbc_rega_dat8(); break;
     case 0xDF: z80_rst(0x18); break;
     case 0xE0: z80_ldh_addr8_rega(); break;
-    case 0xE1: z80_pop_reg16(&registers.DE); break;
+    case 0xE1: z80_pop_reg16(&registers.HL); break;
     case 0xE2: z80_ld_regc_port_rega(); break;
     case 0xE3: return 0; break;
     case 0xE4: return 0; break;
@@ -405,7 +397,7 @@ uint32_t CPU::execute() {
     case 0xEE: z80_rega_xor_dat8(); break;
     case 0xEF: z80_rst(0x28); break;
     case 0xF0: z80_ldh_rega_addr8(); break;
-    case 0xF1: z80_pop_reg16(&registers.HL); break;
+    case 0xF1: z80_pop_reg16(&registers.AF); break;
     case 0xF2: z80_ld_rega_regc_port(); break;
     case 0xF3: z80_di(); break;
     case 0xF4: return 0; break;

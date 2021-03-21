@@ -13,11 +13,12 @@ class Platform : public QObject {
 
     public:
         Platform(int systemType);
+        ~Platform();
 
         bool isRunning;
         bool isPaused;
 
-        void loadRomFile(QByteArray romData);
+        void loadRomFile(QByteArray bootROM, QByteArray romData);
         void pause();
         void setSystemType();
         void start();

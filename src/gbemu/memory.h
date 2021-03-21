@@ -8,7 +8,7 @@
 class Memory
 {
     public:
-        Memory(uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts);
+        Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts);
 
         uint8_t readByte(uint16_t address);
         uint16_t read16bit(uint16_t address);

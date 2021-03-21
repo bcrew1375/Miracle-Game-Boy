@@ -30,6 +30,7 @@ class MainWindow : public QMainWindow
         Ui::MainWindow *ui;
         OpenGlWidget *openGlWidget;
 
+        QTimer *screenUpdateTimer;
         QTimer *statusBarTimer;
         Platform *platform;
 
@@ -40,7 +41,7 @@ class MainWindow : public QMainWindow
         void on_actionPause_triggered();
 
         void emulatedScreenUpdate();
-        void statusBarUpdate();
+        void statusBarUpdate();     
 };
 
 #endif // MAINWINDOW_H

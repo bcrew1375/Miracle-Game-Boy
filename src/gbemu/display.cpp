@@ -9,18 +9,13 @@ Display::Display(uint8_t *videoRam, uint8_t *spriteAttributeTable, IOPorts *ioPo
     this->spriteAttributeTable = spriteAttributeTable;
     this->ioPorts = ioPorts;
 
-    backGroundTileMap = new uint8_t[0x400];
-    // Holds the RGBA converted pixels of the 256 x 256 background.
-    backgroundPixelBuffer = new uint32_t[23040];
-
-    finalDisplayBuffer = new uint32_t[23040];
-    memset(finalDisplayBuffer, 0, 23040 * sizeof(uint32_t));
+    memset(finalDisplayBuffer, 0xFF, 160 * 144 * sizeof(uint32_t));
 }
 
 
 void Display::updateDisplayOutput()
 {
-    memcpy(finalDisplayBuffer, backgroundPixelBuffer, 23040 * sizeof(uint32_t));
+    memcpy(finalDisplayBuffer, backgroundPixelBuffer, 160 * 144 * sizeof(uint32_t));
 }
 
 
@@ -37,14 +32,22 @@ void Display::createScanline()
 }
 
 
-// Convert a tile from 2-bit color pixels to RGBA format.
+// Convert a tile line from 2-bit color pixels to RGBA format.
 uint32_t * Display::convertTileData(uint16_t tileData)
 {
     uint32_t *rgbaLine = new uint32_t[8];
 
-    if ((tileData != 0) && (tileData != 0xFFFF) && (tileData != 0xFF00) && (tileData != 0x00FF))
-        int i = 0;
-    //tileData = 0xCCAA;
+    // Pokemon window tile test
+    /*switch (ioPorts->getLcdYCoordinate() % 8) {
+    case 0: tileData = 0x00FF; break;
+    case 1: tileData = 0xFF7E; break;
+    case 2: tileData = 0x8185; break;
+    case 3: tileData = 0x8389; break;
+    case 4: tileData = 0x8593; break;
+    case 5: tileData = 0x8BA5; break;
+    case 6: tileData = 0x97C9; break;
+    case 7: tileData = 0xFF7E; break;
+    }*/
 
     // Each pixel color is determined by creating a 2-bit value formed by combining the same bit of each byte.
     rgbaLine[0] = rgbaPixelColors[((tileData & 0x8000) >> 14) + ((tileData & 0x0080) >> 7)];
@@ -72,19 +75,19 @@ void Display::getBackgroundTileMap()
 
 void Display::getBackgroundScanline()
 {
-    //uint16_t backgroundTileBytes[32];
     uint16_t backgroundTileBytes[20];
     uint32_t backgroundConvertedPixels[256];
+    uint32_t *convertedTileLine;
     uint16_t tileDataPointerBase;
     uint8_t currentLcdYCoordinate;
-    uint32_t *convertedTileLine;
     uint8_t scrollXOffset;
     uint8_t scrollYOffset;
     uint8_t tileNumber;
     uint8_t tileDataOffsetX;
     uint8_t tileDataOffsetY;
+    uint8_t tileNumberOffsetX;
+    uint8_t tileNumberOffsetY;
 
-    convertedTileLine = new uint32_t[8];
 
     switch ((ioPorts->getLcdControl() & 0x10) >> 4) {
     case 0: tileDataPointerBase = 0x1000; break;
@@ -97,28 +100,32 @@ void Display::getBackgroundScanline()
     scrollXOffset = ioPorts->getScrollX();
     scrollYOffset = ioPorts->getScrollY();
 
-    //tileNumberToDraw = backgroundMap[(((screenCurrentY * 32) + ScrollYOffset / 8) & 32) +
-                                     //(((ScrollXOffset + screenCurrentX) / 8) & 32
+    // Offset the tilenumber X position in the map by the SCX value. Divide by 8 since the SCX value is in pixels and each pixel is 8 pixels wide.
+    tileNumberOffsetX = 0;//scrollXOffset / 8;
+    // Offset the tilenumber Y position in the map by the SCY value + the current line being drawn. Divide by 8 since the SCX value is in pixels and each pixel is 8 pixels tall.
+    tileNumberOffsetY = currentLcdYCoordinate / 8;//(currentLcdYCoordinate + scrollYOffset) / 8;
 
-    // Since each tile has an 8 pixel height, calculate the current Y coordinate of the tiles to grab.
-    //tileDataOffsetX = scrollXOffset % 8;
-    //tileDataOffsetY = scrollYOffset % 8;
+    tileDataOffsetX = 0;//scrollXOffset % 8;
+    tileDataOffsetY = currentLcdYCoordinate % 8;//(currentLcdYCoordinate + scrollYOffset) % 8;
 
     // Collect one line of the full background tile bytes.
     for (int i = 0; i < 20; i++) {
-        tileNumber = backGroundTileMap[i + ((currentLcdYCoordinate / 8) * 32)];
+        tileNumber = backGroundTileMap[i + (tileNumberOffsetY * 32) + tileNumberOffsetX];
 
         if (tileDataPointerBase == 0x0000)
-            backgroundTileBytes[i] = (uint16_t)(videoRam[tileDataPointerBase + (tileNumber * 16)] + (videoRam[(tileDataPointerBase + (tileNumber * 16)) + 1] << 8));
+            backgroundTileBytes[i] = videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + tileDataOffsetX] +
+                                    (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + tileDataOffsetX + 1] << 8);
         else
-            backgroundTileBytes[i] = (uint16_t)(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16)] + (videoRam[(tileDataPointerBase + ((int8_t)(tileNumber) * 16)) + 1] << 8));
+            backgroundTileBytes[i] = videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + tileDataOffsetX] +
+                                    (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + tileDataOffsetX + 1] << 8);
 
-        convertedTileLine = convertTileData(backgroundTileBytes[i]);
-        memcpy(&backgroundConvertedPixels[i * 8], convertedTileLine, 8 * sizeof (uint32_t));
+        //memcpy(convertedTileLine, convertTileData(backgroundTileBytes[i]), 8 * sizeof(uint32_t));
+        //memcpy(&backgroundConvertedPixels[i * 8], convertedTileLine, 8 * sizeof (uint32_t));
         //backgroundTileBytes[i] = (videoRam[(tileDataAreaOffset + (backGroundTileMap[i  * 32]) * 16) + tileDataOffset] << 8) + videoRam[(tileDataAreaOffset + (backGroundTileMap[i  * 32]) * 16) + tileDataOffset] + 1;
         //convertedTileLine = convertTileData(backgroundTileBytes[i]);
         //memcpy(&backgroundConvertedPixels[i * 8], convertedTileLine, 8 * sizeof(uint32_t));
+        convertedTileLine = convertTileData(backgroundTileBytes[i]);
+        memcpy(&backgroundPixelBuffer[(i * 8) + (160 * currentLcdYCoordinate)], convertedTileLine, 160 * sizeof(uint32_t));
+        delete [] convertedTileLine;
     }
-
-    memcpy(&backgroundPixelBuffer[160 * currentLcdYCoordinate], backgroundConvertedPixels, 160 * sizeof(uint32_t));
 }

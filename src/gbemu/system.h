@@ -14,7 +14,8 @@
 class System
 {
     public:
-        System(uint8_t *romData, uint32_t romSizeInBytes);
+        System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes);
+        ~System();
 
         double getRefreshRate();
         void executeCycles();

@@ -9,6 +9,8 @@ IOPorts::IOPorts()
     lcdStatus = 0x82;
     lcdStatModeCycles = 80;
     lcdYCoordinate = 0;
+    scrollY = 0;
+    scrollX = 0;
     hBlankBeginFlag = false;
 }
 

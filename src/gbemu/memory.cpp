@@ -4,7 +4,7 @@
 #include "ioports.h"
 
 
-Memory::Memory(uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts)
+Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts)
 {
     // Ensure the ROM buffer contains at least 32,768 bytes (the minimum to fill both banks).
     if (romSizeInBytes < 0x8000)
@@ -39,6 +39,7 @@ Memory::Memory(uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts)
 
     // Load the first 32,768 bytes into the two 16 K ROM banks.
     std::memcpy(romBank0, &this->romData[0x0000], 0x4000);
+    //std::memcpy(romBank0, &bootROM[0x0000], 0x100);
     std::memcpy(romBank1, &this->romData[0x4000], 0x4000);
 }
 
