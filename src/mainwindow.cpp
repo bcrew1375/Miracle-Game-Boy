@@ -24,6 +24,7 @@ MainWindow::~MainWindow() {
     delete openGlWidget;
     delete platform;
     delete statusBarTimer;
+    delete screenUpdateTimer;
 }
 
 

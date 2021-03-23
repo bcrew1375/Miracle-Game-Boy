@@ -26,7 +26,7 @@ class IOPorts
         void setInterruptRequestFlags(uint8_t data);
         void setLcdControl(uint8_t data);
         void setLcdStatus(uint8_t data);
-        void setLcdYCoordinate(uint8_t data);
+        void setLcdYCoordinate();
         void setLcdYCompare(uint8_t data);
         void setSerialTransferControl(uint8_t data);
         void setSerialTransferData(uint8_t data);
@@ -46,6 +46,8 @@ class IOPorts
         uint8_t divider;
         int16_t dividerCycles;
         uint8_t timerCounter;
+        int16_t timerCycles;
+        uint16_t timerCyclesReset;
         uint8_t timerModulo;
         uint8_t timerControl;
         uint8_t soundChannel1Sweep;

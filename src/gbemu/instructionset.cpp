@@ -3,125 +3,198 @@
 
 void CPU::z80_adc_rega_dat8()
 {
-    int16_t result = registers.A + memory->readByte(registers.PC) + registers.flagC;
+    bool carry = registers.flagC;
+    uint8_t data = memory->readByte(registers.PC);
     registers.PC++;
 
-    registers.A = (uint8_t)result;
+    registers.flagN = false;
+
+    if (((registers.A & 0x0F) + (data & 0x0F) + carry) > 0x0F)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A + data + carry) > 0xFF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A += data + carry;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    registers.flagN = 0;
-
-    if (result > 0xFF)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_adc_rega_reg8(uint8_t *reg8)
 {
-    int16_t result = registers.A + *reg8 + registers.flagC;
-    registers.A = result;
+    bool carry = registers.flagC;
+
+    registers.flagN = false;
+
+    if (((registers.A & 0x0F) + (*reg8 & 0x0F) + carry) > 0x0F)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A + *reg8 + carry) > 0xFF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A += *reg8 + carry;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result > 0xFF)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_adc_rega_reghl_addr16()
 {
-    int16_t result = registers.A + memory->readByte(registers.HL) + registers.flagC;
-    registers.A = result;
+    bool carry = registers.flagC;
+    uint8_t data = memory->readByte(registers.HL);
+    registers.PC++;
+
+    registers.flagN = false;
+
+    if (((registers.A & 0x0F) + (data & 0x0F) + carry) > 0x0F)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A + data + carry) > 0xFF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A += data + carry;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result > 0xFF)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_add_rega_dat8()
 {
-    int16_t result = registers.A + memory->readByte(registers.PC);
+    uint8_t data = memory->readByte(registers.PC);
     registers.PC++;
-    registers.A = result;
+
+    registers.flagN = false;
+
+    if (((registers.A & 0x0F) + (data & 0x0F)) > 0x0F)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A + data) > 0xFF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A += data;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result > 0xFF)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_add_rega_reg8(uint8_t *reg8)
 {
-    int16_t result = registers.A + *reg8;
-    registers.A = result;
+    registers.flagN = false;
+
+    if (((registers.A & 0x0F) + (*reg8 & 0x0F)) > 0x0F)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A + *reg8) > 0xFF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A += *reg8;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result > 0xFF)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_add_rega_reghl_addr16()
 {
-    int16_t result = registers.A + memory->readByte(registers.HL);
-    registers.A = result;
+    uint8_t data = memory->readByte(registers.HL);
+
+    registers.flagN = false;
+
+    if (((registers.A & 0x0F) + (data & 0x0F)) > 0x0F)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A + data) > 0xFF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A += data;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result > 0xFF)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_add_reghl_reg16(uint16_t *reg16)
 {
+    registers.flagN = 0;
+
+    if (((registers.L & 0x0F) + (*reg16 & 0x0F)) > 0x0F)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.L + (*reg16 & 0xFF)) > 0xFF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
     registers.HL += *reg16;
 }
 
 
 void CPU::z80_add_sp_dat8()
 {
-    registers.SP += (int8_t)memory->readByte(registers.PC);
+    int8_t data = (int8_t)memory->readByte(registers.PC);
     registers.PC++;
+
+    registers.flagZ = 0;
+    registers.flagN = 0;
+
+    if (((registers.SP & 0x0F) + (data & 0xF)) > 0xF)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.SP + data) > 0xFF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.SP += data;
 }
 
 
-void CPU::z80_call()
+void CPU::z80_call_a16()
 {
     registers.PC += 2;
     z80_push_reg16(&registers.PC);
@@ -224,9 +297,9 @@ void CPU::z80_dec_reg8(uint8_t *reg8)
     else
         registers.flagZ = false;
 
-    registers.flagN = false;
+    registers.flagN = true;
 
-    if (*reg8 == 0x0F)
+    if ((*reg8 & 0x0F) == 0x0F)
         registers.flagH = true;
     else
         registers.flagH = false;
@@ -243,9 +316,9 @@ void CPU::z80_dec_reghl_addr16()
     else
         registers.flagZ = false;
 
-    registers.flagN = false;
+    registers.flagN = true;
 
-    if (data == 0x0F)
+    if ((data & 0x0F) == 0x0F)
         registers.flagH = true;
     else
         registers.flagH = false;
@@ -287,7 +360,7 @@ void CPU::z80_inc_reg8(uint8_t *reg8)
 
     registers.flagN = false;
 
-    if (*reg8 == 0x10)
+    if ((*reg8 & 0x0F) == 0x00)
         registers.flagH = true;
     else
         registers.flagH = false;
@@ -306,7 +379,7 @@ void CPU::z80_inc_reghl_addr16()
 
     registers.flagN = false;
 
-    if (data == 0x10)
+    if ((data & 0x0F) == 0x00)
         registers.flagH = true;
     else
         registers.flagH = false;
@@ -350,8 +423,6 @@ void CPU::z80_jp_nz()
 
 void CPU::z80_jp_reghl()
 {
-    //registers.PCl = memory->readByte(registers.HL);
-    //registers.PCh = memory->readByte(registers.HL + 1);
     registers.PC = registers.HL;
 }
 
@@ -473,7 +544,8 @@ void CPU::z80_ld_reg8_reghl_addr16(uint8_t *reg8)
 
 void CPU::z80_ld_rega_addr16()
 {
-    registers.A = memory->readByte(memory->readByte(registers.PC) + (memory->readByte(registers.PC + 1) << 8));
+    uint16_t address = memory->readByte(registers.PC) + (memory->readByte(registers.PC + 1) << 8);
+    registers.A = memory->readByte(address);
     registers.PC += 2;
 }
 
@@ -511,11 +583,10 @@ void CPU::z80_ld_reghl_addr16_reg8(uint8_t *reg8)
 
 void CPU::z80_ld_reghl_sp_add_dat8()
 {
-    uint16_t data = registers.SP += (int8_t)memory->readByte(registers.PC);
+    uint16_t data = registers.SP + (int8_t)memory->readByte(registers.PC);
     registers.PC++;
 
-    memory->writeByte(registers.HL, (data & 0xFF));
-    memory->writeByte(registers.HL + 1, (data & 0xFF00) >> 8);
+    registers.HL = data;
 }
 
 
@@ -580,6 +651,9 @@ void CPU::z80_pop_reg16(uint16_t *reg16)
     registers.SP++;
     *reg16 += memory->readByte(registers.SP) << 8;
     registers.SP++;
+
+    // Accounts for the situation where AF is popped and bits 0-3 of the flag byte must not be written.
+    registers.F &= 0xF0;
 }
 
 
@@ -601,6 +675,10 @@ void CPU::z80_rega_and_dat8()
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = true;
+    registers.flagC = false;
 }
 
 
@@ -612,6 +690,10 @@ void CPU::z80_rega_and_reg8(uint8_t *reg8)
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = true;
+    registers.flagC = false;
 }
 
 
@@ -623,40 +705,10 @@ void CPU::z80_rega_and_reghl_addr16()
         registers.flagZ = true;
     else
         registers.flagZ = false;
-}
 
-
-void CPU::z80_rega_cp_reg8(uint8_t *reg8)
-{
-    if ((registers.A - *reg8) == 0)
-        registers.flagZ = true;
-    else
-        registers.flagZ = false;
-
-    if ((registers.A - *reg8) < 0)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
-
-    registers.flagN = true;
-}
-
-
-void CPU::z80_rega_cp_reghl_addr16()
-{
-    uint8_t data = memory->readByte(registers.HL);
-
-    if ((registers.A - data) == 0)
-        registers.flagZ = true;
-    else
-        registers.flagZ = false;
-
-    if ((registers.A - data) < 0)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
-
-    registers.flagN = true;
+    registers.flagN = false;
+    registers.flagH = true;
+    registers.flagC = false;
 }
 
 
@@ -669,6 +721,58 @@ void CPU::z80_rega_cp_dat8()
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < (data & 0x0F))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A - data) < 0)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+}
+
+
+void CPU::z80_rega_cp_reg8(uint8_t *reg8)
+{
+    if ((registers.A - *reg8) == 0)
+        registers.flagZ = true;
+    else
+        registers.flagZ = false;
+
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < (*reg8 & 0x0F))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A - *reg8) < 0)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+}
+
+
+void CPU::z80_rega_cp_reghl_addr16()
+{
+    uint8_t data = memory->readByte(registers.HL);
+
+    if ((registers.A - data) == 0)
+        registers.flagZ = true;
+    else
+        registers.flagZ = false;
+
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < (data & 0x0F))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
 
     if ((registers.A - data) < 0)
         registers.flagC = true;
@@ -688,6 +792,10 @@ void CPU::z80_rega_or_dat8()
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = false;
+    registers.flagC = false;
 }
 
 
@@ -699,6 +807,10 @@ void CPU::z80_rega_or_reg8(uint8_t *reg8)
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = false;
+    registers.flagC = false;
 }
 
 
@@ -710,6 +822,10 @@ void CPU::z80_rega_or_reghl_addr16()
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = false;
+    registers.flagC = false;
 }
 
 
@@ -722,6 +838,10 @@ void CPU::z80_rega_xor_dat8()
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = false;
+    registers.flagC = false;
 }
 
 
@@ -733,6 +853,10 @@ void CPU::z80_rega_xor_reg8(uint8_t *reg8)
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = false;
+    registers.flagC = false;
 }
 
 
@@ -744,6 +868,10 @@ void CPU::z80_rega_xor_reghl_addr16()
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = false;
+    registers.flagC = false;
 }
 
 
@@ -805,7 +933,7 @@ void CPU::z80_rla()
 {
     bool carry = registers.flagC;
     registers.flagC = registers.A & 0x80;
-    registers.A = (registers.A << 1) | carry;
+    registers.A = (registers.A << 1) | (uint8_t)carry;
 
     registers.flagZ = false;
     registers.flagN = false;
@@ -828,7 +956,7 @@ void CPU::z80_rra()
 {
     bool carry = registers.flagC;
     registers.flagC = registers.A & 0x01;
-    registers.A = (registers.A >> 1) | (carry << 7);
+    registers.A = (registers.A >> 1) | (uint8_t)(carry << 7);
 
     registers.flagZ = false;
     registers.flagN = false;
@@ -856,53 +984,79 @@ void CPU::z80_rst(uint8_t addr8)
 
 void CPU::z80_sbc_rega_dat8()
 {
-    int16_t result = registers.A - (memory->readByte(registers.PC) + registers.flagC);
+    bool carry = registers.flagC;
+    uint8_t data = memory->readByte(registers.PC);
     registers.PC++;
-    registers.A = result;
+
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < ((data & 0x0F) + carry))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A - (data + carry)) < 0)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A -= data + carry;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result < 0)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_sbc_rega_reg8(uint8_t *reg8)
 {
-    int16_t result = registers.A - (*reg8 + registers.flagC);
-    registers.A = result;
+    bool carry = registers.flagC;
+
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < ((*reg8 & 0x0F) + carry))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A - (*reg8 + carry)) < 0)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A -= *reg8 + carry;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result < 0)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_sbc_rega_reghl_addr16()
 {
-    int16_t result = registers.A - (memory->readByte(registers.HL) + registers.flagC);
-    registers.A = result;
+    bool carry = registers.flagC;
+    uint8_t data = memory->readByte(registers.HL);
+
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < ((data & 0x0F) + carry))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A - (data + carry)) < 0)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A -= data + carry;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result < 0)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
@@ -923,51 +1077,72 @@ void CPU::z80_stop()
 
 void CPU::z80_sub_rega_dat8()
 {
-    int16_t result = registers.A - memory->readByte(registers.PC);
+    uint8_t data = memory->readByte(registers.PC);
     registers.PC++;
-    registers.A = result;
+
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < (data & 0x0F))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A - data) < 0)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A -= data;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result < 0)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_sub_rega_reg8(uint8_t *reg8)
 {
-    int16_t result = registers.A - *reg8;
-    registers.A = result;
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < (*reg8 & 0x0F))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A - *reg8) < 0)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A -= *reg8;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result < 0)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }
 
 
 void CPU::z80_sub_rega_reghl_addr16()
 {
-    int16_t result = registers.A - memory->readByte(registers.HL);
-    registers.A = result;
+    uint8_t data = memory->readByte(registers.HL);
+    registers.flagN = true;
+
+    if ((registers.A & 0x0F) < (data & 0x0F))
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if ((registers.A - data) < 0)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.A -= data;
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
-
-    if (result < 0)
-        registers.flagC = true;
-    else
-        registers.flagC = false;
 }

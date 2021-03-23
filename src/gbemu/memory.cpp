@@ -163,7 +163,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         case 0xFF41: ioPorts->setLcdStatus(data); break;
         case 0xFF42: ioPorts->setScrollY(data); break;
         case 0xFF43: ioPorts->setScrollX(data); break;
-        case 0xFF44: ioPorts->setLcdYCoordinate(data); break;
+        case 0xFF44: ioPorts->setLcdYCoordinate(); break;
         case 0xFF45: ioPorts->setLcdYCompare(data); break;
         default: return; break;
         }

@@ -39,13 +39,13 @@ void Platform::setSystemType() {
 
 
 void Platform::start() {
-    speedRegulationTimer->start(round(1000 / system->getRefreshRate())); // Tie the emulation speed to the number of screen refreshes per second.
+    //speedRegulationTimer->start(round(1000 / system->getRefreshRate())); // Tie the emulation speed to the number of screen refreshes per second.
 
-    /*while (0 == 0) {
+    while (0 == 0) {
         QApplication::processEvents();
         //speedRegulationTimer->start(round(1000 / system->getRefreshRate())); // Tie the emulation speed to the number of screen refreshes per second.
         executionLoop();
-    }*/
+    }
 }
 
 

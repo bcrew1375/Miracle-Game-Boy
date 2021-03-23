@@ -13,7 +13,7 @@ System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes)
 
     clockSpeed = 4194304;
     displayRefreshRate = 59.73;
-    cyclesPerFrame = clockSpeed / displayRefreshRate;
+    cyclesPerFrame = (uint32_t)(clockSpeed / displayRefreshRate);
 
     isRunning = true;
 }
@@ -32,6 +32,7 @@ System::~System()
 void System::executeCycles() {
     cyclesLeftToRun = cyclesPerFrame;
 
+    // TO DO: Transfer the main execution loop to the CPU class to prevent calling "execute" for every instruction.
     while (cyclesLeftToRun > 0) {
         previousOpcode = cpu->getOpcode();
         previousPC = cpu->getRegisterPC();

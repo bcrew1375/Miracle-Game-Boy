@@ -69,40 +69,43 @@ void CPU::handleInterrupts()
     uint8_t enabledInterruptFlags = memory->readByte(0xFFFF);
     uint8_t interruptRequestFlags = ioPorts->getInterruptRequestFlags();
 
-    if (getInterruptMasterEnableFlag() == true) {
+    if (interruptMasterEnableFlag == true) {
+        // V-Blank
         if (((interruptRequestFlags & 0x01)) && ((enabledInterruptFlags & 0x01))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1E);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0040;
-            setInterruptMasterEnableFlag(false);
+            interruptMasterEnableFlag = false;
             halted = false;
         }
+        // LCD Status
         else if (((interruptRequestFlags & 0x02)) && ((enabledInterruptFlags & 0x02))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1D);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0048;
-            setInterruptMasterEnableFlag(false);
+            interruptMasterEnableFlag = false;
             halted = false;
         }
+        // Timer
         else if (((interruptRequestFlags & 0x04)) && ((enabledInterruptFlags & 0x04))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1B);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0050;
-            setInterruptMasterEnableFlag(false);
+            interruptMasterEnableFlag = false;
             halted = false;
         }
         else if (((interruptRequestFlags & 0x08)) && ((enabledInterruptFlags & 0x08))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x17);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0058;
-            setInterruptMasterEnableFlag(false);
+            interruptMasterEnableFlag = false;
             halted = false;
         }
-        if (((interruptRequestFlags & 0x10)) && ((enabledInterruptFlags & 0x10))) {
+        else if (((interruptRequestFlags & 0x10)) && ((enabledInterruptFlags & 0x10))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0F);
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0060;
-            setInterruptMasterEnableFlag(false);
+            interruptMasterEnableFlag = false;
             halted = false;
         }
     }
@@ -129,6 +132,10 @@ void CPU::setInterruptMasterEnableFlag(bool state)
 
 uint32_t CPU::execute() {
     uint8_t cbOpcode;
+    uint8_t cbInstructionType;
+    uint8_t cbBitNumber;
+    uint8_t *cbRegister;
+
     if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC > 0xE000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
         int j = 0;
 
@@ -141,7 +148,12 @@ uint32_t CPU::execute() {
     if (stopped == false) {
         if (halted == false)
             registers.PC++;
+        else if ((halted == true) && (interruptMasterEnableFlag == false)) {
+            halted = false; // This accounts for the HALT bug which stops the Program Counter from incrementing for one instruction
+                            // if HALT is used with interrupts disabled.
+        }
     }
+
     else {
         // TO DO: Handle stopped condition.
     }
@@ -353,15 +365,106 @@ uint32_t CPU::execute() {
     case 0xCB: {
         cbOpcode = memory->readByte(registers.PC);
 
-        switch (cbOpcode) {
-        case 0x11: z80_cb_rl_reg8(&registers.C); break;
-        case 0x7C: z80_cb_test_reg8_bit7(&registers.H); break;
+        // Decode the register number to operate on, bits 2-0, where b000 = B, b001 = C, b010 = D, b011 = E, b100 = H, b101 = L, b110 = (HL), b111 = A
+        switch (cbOpcode & 0b00000111) {
+        case 0b00000000: cbRegister = &registers.B; break;
+        case 0b00000001: cbRegister = &registers.C; break;
+        case 0b00000010: cbRegister = &registers.D; break;
+        case 0b00000011: cbRegister = &registers.E; break;
+        case 0b00000100: cbRegister = &registers.H; break;
+        case 0b00000101: cbRegister = &registers.L; break;
+        case 0b00000110: cbRegister = nullptr; break; // nullptr represents (HL), which will be handled by its own set of functions.
+        case 0b00000111: cbRegister = &registers.A; break;
+        }
+
+        // Decode the bit that will be operated on, bits 5-3, where b000 = bit 0, b001 = bit 1, b010 = bit 2, b011 = bit 3, b100 = bit 4, b101 = bit 5, b110 = bit 6, b111 = bit 7
+        cbBitNumber = cbOpcode & 0x38;
+
+        // Decode the opcode's instruction type, bits 7-6, where b00 = rotate/shift, b01 = test bit, b10 = reset bit, b11 = set bit
+        cbInstructionType = cbOpcode & 0xC0;
+
+        if (cbRegister != nullptr) {
+            switch (cbInstructionType) {
+            // This is a rotate/shift instruction. In this case, the bit number serves as an index for the operation to perform where
+            //                          b000 = rlc, b001 = rrc, b010 = rl, b011 = rr, b100 = sla, b101 = sra, b110 = swap, b111 = srl
+            case 0b00000000: {
+                switch (cbBitNumber) {
+                case 0b00000000: z80_cb_rlc_reg8(cbRegister); break;
+                case 0b00001000: z80_cb_rrc_reg8(cbRegister); break;
+                case 0b00010000: z80_cb_rl_reg8(cbRegister); break;
+                case 0b00011000: z80_cb_rr_reg8(cbRegister); break;
+                case 0b00100000: z80_cb_sla_reg8(cbRegister); break;
+                case 0b00101000: z80_cb_sra_reg8(cbRegister); break;
+                case 0b00110000: z80_cb_swap_reg8(cbRegister); break;
+                case 0b00111000: z80_cb_srl_reg8(cbRegister); break;
+                }
+            } break;
+            case 0b01000000: {
+                // Create a mask to test the bit with.
+                cbBitNumber >>= 3;
+                cbBitNumber = 2^cbBitNumber;
+
+                z80_cb_test_reg8_bit(cbRegister, cbBitNumber);
+            } break;
+            case 0b10000000: {
+                // Create a mask to reset the bit with.
+                cbBitNumber >>= 3;
+                cbBitNumber = 0xFF - 2^cbBitNumber;
+
+                z80_cb_reset_reg8_bit(cbRegister, cbBitNumber);
+            } break;
+            case 0b11000000: {
+                // Create a mask to set the bit with.
+                cbBitNumber >>= 3;
+                cbBitNumber = 2^cbBitNumber;
+
+                z80_cb_set_reg8_bit(cbRegister, cbBitNumber);
+            } break;
+            }
+        }
+        // Handle (HL) cases.
+        else {
+            switch (cbInstructionType) {
+            case 0b00000000: {
+                switch (cbBitNumber) {
+                case 0b00000000: z80_cb_rlc_reghl_addr16(); break;
+                case 0b00001000: z80_cb_rrc_reghl_addr16(); break;
+                case 0b00010000: z80_cb_rl_reghl_addr16(); break;
+                case 0b00011000: z80_cb_rr_reghl_addr16(); break;
+                case 0b00100000: z80_cb_sla_reghl_addr16(); break;
+                case 0b00101000: z80_cb_sra_reghl_addr16(); break;
+                case 0b00110000: z80_cb_swap_reghl_addr16(); break;
+                case 0b00111000: z80_cb_srl_reghl_addr16(); break;
+                }
+            } break;
+            case 0b01000000: {
+                // Create a mask to test the bit with.
+                cbBitNumber >>= 3;
+                cbBitNumber = 2^cbBitNumber;
+
+                z80_cb_test_reghl_addr16_bit(cbBitNumber);
+            } break;
+            case 0b10000000: {
+                // Create a mask to reset the bit with.
+                cbBitNumber >>= 3;
+                cbBitNumber = 0xFF - 2^cbBitNumber;
+
+                z80_cb_reset_reghl_addr16_bit(cbBitNumber);
+            } break;
+            case 0b11000000: {
+                // Create a mask to set the bit with.
+                cbBitNumber >>= 3;
+                cbBitNumber = 2^cbBitNumber;
+
+                z80_cb_set_reghl_addr16_bit(cbBitNumber);
+            } break;
+            }
         }
 
         registers.PC++;
     } break;
     case 0xCC: z80_call_z(); break;
-    case 0xCD: z80_call(); break;
+    case 0xCD: z80_call_a16(); break;
     case 0xCE: z80_adc_rega_dat8(); break;
     case 0xCF: z80_rst(0x08); break;
     case 0xD0: z80_ret_nc(); break;

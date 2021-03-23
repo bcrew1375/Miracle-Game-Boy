@@ -35,7 +35,6 @@ class CPU
         bool interruptMasterEnableFlag;
         uint8_t opcode;
         uint32_t clockCyclesExecuted;
-        int16_t lcdStatModeCycles;
 
         void z80_adc_rega_dat8();
         void z80_adc_rega_reg8(uint8_t *reg8);
@@ -45,7 +44,7 @@ class CPU
         void z80_add_rega_reghl_addr16();
         void z80_add_reghl_reg16(uint16_t *reg16);
         void z80_add_sp_dat8();
-        void z80_call();
+        void z80_call_a16();
         void z80_call_c();
         void z80_call_nc();
         void z80_call_nz();
@@ -131,7 +130,27 @@ class CPU
 
 
         void z80_cb_rl_reg8(uint8_t *reg8);
-        void z80_cb_test_reg8_bit7(uint8_t *reg8);
+        void z80_cb_rr_reg8(uint8_t *reg8);
+        void z80_cb_test_reg8_bit(uint8_t *reg8, uint8_t bitMask);
+        void z80_cb_rlc_reg8(uint8_t *reg8);
+        void z80_cb_rrc_reg8(uint8_t *reg8);
+        void z80_cb_reset_reg8_bit(uint8_t *reg8, uint8_t bitMask);
+        void z80_cb_set_reg8_bit(uint8_t *reg8, uint8_t bitMask);
+        void z80_cb_sla_reg8(uint8_t *reg8);
+        void z80_cb_sra_reg8(uint8_t *reg8);
+        void z80_cb_swap_reg8(uint8_t *reg8);
+        void z80_cb_srl_reg8(uint8_t *reg8);
+        void z80_cb_reset_reghl_addr16_bit(uint8_t bitMask);
+        void z80_cb_rl_reghl_addr16();
+        void z80_cb_rlc_reghl_addr16();
+        void z80_cb_rr_reghl_addr16();
+        void z80_cb_rrc_reghl_addr16();
+        void z80_cb_set_reghl_addr16_bit(uint8_t bitMask);
+        void z80_cb_sra_reghl_addr16();
+        void z80_cb_srl_reghl_addr16();
+        void z80_cb_swap_reghl_addr16();
+        void z80_cb_sla_reghl_addr16();
+        void z80_cb_test_reghl_addr16_bit(uint8_t bitMask);
 };
 
 #endif // CPU_H

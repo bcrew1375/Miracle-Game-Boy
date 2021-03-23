@@ -10,7 +10,7 @@ OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent) {}
 void OpenGlWidget::initializeGL() {
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
-    f->glClearColor(0, 0, 0, 0);
+    f->glClearColor(1, 1, 1, 0);
 
     vertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
     fragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);

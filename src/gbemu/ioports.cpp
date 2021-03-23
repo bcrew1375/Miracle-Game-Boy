@@ -5,6 +5,11 @@ IOPorts::IOPorts()
 {
     divider = 0x00;
     dividerCycles = 256;
+    timerControl = 0xF8;
+    timerCounter = 0;
+    timerCycles = 0;
+    timerCyclesReset = 0;
+    timerModulo = 0;
     lcdControl = 0x91;
     lcdStatus = 0x82;
     lcdStatModeCycles = 80;
@@ -122,9 +127,9 @@ void IOPorts::setLcdStatus(uint8_t data)
 }
 
 
-void IOPorts::setLcdYCoordinate(uint8_t data)
+void IOPorts::setLcdYCoordinate()
 {
-    //lcdYCoordinate = data;
+    lcdYCoordinate = 0;
 }
 
 void IOPorts::setLcdYCompare(uint8_t data)
@@ -163,7 +168,20 @@ void IOPorts::setDivider(uint8_t data)
 
 void IOPorts::setTimerControl(uint8_t data)
 {
-    timerControl = data;
+    timerControl = 0xF8 | data;
+
+    if (timerControl & 0x04) {
+        if ((timerControl & 0x03) == 0x00)
+            timerCyclesReset = 1024;
+        if ((timerControl & 0x03) == 0x01)
+            timerCyclesReset = 16;
+        if ((timerControl & 0x03) == 0x02)
+            timerCyclesReset = 64;
+        if ((timerControl & 0x03) == 0x03)
+            timerCyclesReset = 256;
+
+        timerCycles = timerCyclesReset;
+    }
 }
 
 
@@ -234,5 +252,19 @@ void IOPorts::updateRegisters(uint16_t cyclesExecuted)
     if (dividerCycles <= 0) {
         divider++;
         dividerCycles += 256;
+    }
+
+    if (timerControl & 0x04) {
+        timerCycles -= cyclesExecuted;
+        if (timerCycles <= 0) {
+            timerCycles += timerCyclesReset;
+
+            timerCounter++;
+
+            if (timerCounter == 0) {
+                timerCounter = timerModulo;
+                interruptRequestFlags |= 0x04;
+            }
+        }
     }
 }
