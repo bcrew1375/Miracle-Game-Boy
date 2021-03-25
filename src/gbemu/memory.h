@@ -30,7 +30,7 @@ class Memory
         uint8_t *internalRamBank1;
         uint8_t *spriteAttributeTable;
         uint8_t *highRam;
-        uint8_t *interruptEnable;
+        uint8_t interruptEnableFlags;
 };
 
 #endif // MEMORY_H

@@ -3,20 +3,54 @@
 
 IOPorts::IOPorts()
 {
-    divider = 0x00;
-    dividerCycles = 256;
+    // All values assume bootrom has just finished executing.
+    controller = 0xFF;
+    divider = 0xAB;
+    dividerCycles = 176;
+    interruptRequestFlags = 0xE1;
     timerControl = 0xF8;
-    timerCounter = 0;
+    timerCounter = 0x00;
     timerCycles = 0;
     timerCyclesReset = 0;
-    timerModulo = 0;
+    timerModulo = 0x00;
     lcdControl = 0x91;
     lcdStatus = 0x82;
     lcdStatModeCycles = 80;
-    lcdYCoordinate = 0;
+    lcdYCoordinate = 0x00;
+    serialTransferControl = 0x7E;
+    serialTransferData = 0x00;
     scrollY = 0;
     scrollX = 0;
     hBlankBeginFlag = false;
+}
+
+
+bool IOPorts::getHBlankBeginFlag()
+{
+    if (hBlankBeginFlag == true) {
+        hBlankBeginFlag = false;
+        return true;
+    }
+    else
+        return false;
+}
+
+
+uint8_t IOPorts::getController()
+{
+    return controller;
+}
+
+
+uint8_t IOPorts::getDivider()
+{
+    return divider;
+}
+
+
+uint8_t IOPorts::getInterruptRequestFlags()
+{
+    return interruptRequestFlags;
 }
 
 
@@ -32,21 +66,15 @@ uint8_t IOPorts::getLcdStatus()
 }
 
 
+uint8_t IOPorts::getLcdYCompare()
+{
+    return lcdYCompare;
+}
+
+
 uint8_t IOPorts::getLcdYCoordinate()
 {
     return lcdYCoordinate;
-}
-
-
-uint8_t IOPorts::getSerialTransferControl()
-{
-    return serialTransferControl;
-}
-
-
-uint8_t IOPorts::getSerialTransferData()
-{
-    return serialTransferData;
 }
 
 
@@ -62,21 +90,15 @@ uint8_t IOPorts::getScrollY()
 }
 
 
-uint8_t IOPorts::getInterruptRequestFlags()
+uint8_t IOPorts::getSerialTransferControl()
 {
-    return interruptRequestFlags;
+    return serialTransferControl;
 }
 
 
-uint8_t IOPorts::getDivider()
+uint8_t IOPorts::getSerialTransferData()
 {
-    return divider;
-}
-
-
-uint8_t IOPorts::getLcdYCompare()
-{
-    return lcdYCompare;
+    return serialTransferData;
 }
 
 
@@ -98,20 +120,24 @@ uint8_t IOPorts::getTimerModulo()
 }
 
 
-bool IOPorts::getHBlankBeginFlag()
+void IOPorts::setController(uint8_t data)
 {
-    if (hBlankBeginFlag == true) {
-        hBlankBeginFlag = false;
-        return true;
-    }
-    else
-        return false;
+    // Only bits 4-5 are writeable. Bits 0-3 are set hi/lo depending on controller inputs. Bits 6-7 are unusable.
+    controller &= 0xCF;
+    controller |= data & 0b00110000;
+}
+
+
+void IOPorts::setDivider(uint8_t data)
+{
+    divider = 0;
+    timerCounter = 0;
 }
 
 
 void IOPorts::setInterruptRequestFlags(uint8_t data)
 {
-    interruptRequestFlags = data;
+    interruptRequestFlags = 0xE0 | data;
 }
 
 
@@ -123,28 +149,19 @@ void IOPorts::setLcdControl(uint8_t data)
 void IOPorts::setLcdStatus(uint8_t data)
 {
     // Make sure the current mode isn't overwritten.
-    lcdStatus = data & 0xFC;
+    lcdStatus |= (data & 0xFC);
 }
 
-
-void IOPorts::setLcdYCoordinate()
-{
-    lcdYCoordinate = 0;
-}
 
 void IOPorts::setLcdYCompare(uint8_t data)
 {
     lcdYCoordinate = data;
 }
 
-void IOPorts::setSerialTransferControl(uint8_t data)
-{
-    serialTransferControl = data;
-}
 
-void IOPorts::setSerialTransferData(uint8_t data)
+void IOPorts::setLcdYCoordinate()
 {
-    serialTransferData = data;
+    lcdYCoordinate = 0;
 }
 
 
@@ -160,9 +177,15 @@ void IOPorts::setScrollY(uint8_t data)
 }
 
 
-void IOPorts::setDivider(uint8_t data)
+void IOPorts::setSerialTransferControl(uint8_t data)
 {
-    divider = 0;
+    serialTransferControl = data;
+}
+
+
+void IOPorts::setSerialTransferData(uint8_t data)
+{
+    serialTransferData = data;
 }
 
 
@@ -171,14 +194,12 @@ void IOPorts::setTimerControl(uint8_t data)
     timerControl = 0xF8 | data;
 
     if (timerControl & 0x04) {
-        if ((timerControl & 0x03) == 0x00)
-            timerCyclesReset = 1024;
-        if ((timerControl & 0x03) == 0x01)
-            timerCyclesReset = 16;
-        if ((timerControl & 0x03) == 0x02)
-            timerCyclesReset = 64;
-        if ((timerControl & 0x03) == 0x03)
-            timerCyclesReset = 256;
+        switch (timerControl & 0x03) {
+        case 0x00: timerCyclesReset = 1024; break;
+        case 0x01: timerCyclesReset = 16; break;
+        case 0x02: timerCyclesReset = 64; break;
+        case 0x03: timerCyclesReset = 256; break;
+        }
 
         timerCycles = timerCyclesReset;
     }
@@ -212,6 +233,7 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
         if (lcdStatMode == 0x02)
             lcdYCoordinate++;
         if (lcdStatMode == 0x00) {
+            // Request H-Blank interrupt if enabled.
             if (lcdStatus & 0x08)
                 interruptRequestFlags |= 0x02;
             hBlankBeginFlag = true;
@@ -220,8 +242,9 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
     else if ((lcdYCoordinate == 144) && (lcdStatMode == 0x02)) {
         lcdStatMode = 0x01;
         lcdStatModeCycles += 376; // Account for the 80 cycles from mode 2 by not adding them here.
+        interruptRequestFlags |= 0x01;
         if (lcdStatus & 0x10)
-            interruptRequestFlags |= 0x01;
+            interruptRequestFlags |= 0x02;
     }
     else if ((lcdStatModeCycles <= 0) && (lcdYCoordinate >= 144)) {
         lcdYCoordinate++;
@@ -235,8 +258,13 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
         }
     }
 
-    if ((lcdYCoordinate == lcdYCompare) && (lcdStatus & 0x40))
-        interruptRequestFlags |= 0x02;
+    if (lcdYCoordinate == lcdYCompare) {
+        lcdStatus |= 0x04;
+        if (lcdStatus & 0x40)
+            interruptRequestFlags |= 0x02;
+    }
+    else
+        lcdStatus &= 0xFB;
 
     // Clear the 3 least significant bits and write the new status.
     lcdStatus &= 0xFC;
@@ -246,18 +274,20 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
 
 void IOPorts::updateRegisters(uint16_t cyclesExecuted)
 {
-    updateLcdStatMode(cyclesExecuted);
+    // Don't update LCD-related registers if the LCD isn't turned on.
+    if (lcdControl & 0x80)
+        updateLcdStatMode(cyclesExecuted);
 
     dividerCycles -= cyclesExecuted;
-    if (dividerCycles <= 0) {
+    if (dividerCycles < 0) {
         divider++;
         dividerCycles += 256;
     }
 
     if (timerControl & 0x04) {
         timerCycles -= cyclesExecuted;
-        if (timerCycles <= 0) {
-            timerCycles += timerCyclesReset;
+        if (timerCycles < 0) {
+            timerCycles = timerCyclesReset;
 
             timerCounter++;
 

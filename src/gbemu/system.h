@@ -4,7 +4,6 @@
 #include "cpu.h"
 #include "memory.h"
 #include "display.h"
-#include "interrupts.h"
 #include "ioports.h"
 
 #include <stdint.h>
@@ -27,7 +26,6 @@ class System
     private:
         Memory *memory;
         CPU *cpu;
-        Interrupts *interrupts;
         Display *display;
         IOPorts *ioPorts;
 

@@ -9,33 +9,38 @@ class IOPorts
     public:
         IOPorts();
 
+        bool getHBlankBeginFlag();
+
+        uint8_t getController();
+        uint8_t getDivider();
+        uint8_t getInterruptRequestFlags();
         uint8_t getLcdControl();
         uint8_t getLcdStatus();
+        uint8_t getLcdYCompare();
         uint8_t getLcdYCoordinate();
-        uint8_t getSerialTransferControl();
-        uint8_t getSerialTransferData();
         uint8_t getScrollX();
         uint8_t getScrollY();
-        uint8_t getInterruptRequestFlags();
-        uint8_t getDivider();
-        uint8_t getLcdYCompare();
+        uint8_t getSerialTransferControl();
+        uint8_t getSerialTransferData();
         uint8_t getTimerControl();
         uint8_t getTimerCounter();
         uint8_t getTimerModulo();
-        bool getHBlankBeginFlag();
+
+        void setController(uint8_t data);
+        void setDivider(uint8_t data);
         void setInterruptRequestFlags(uint8_t data);
         void setLcdControl(uint8_t data);
         void setLcdStatus(uint8_t data);
-        void setLcdYCoordinate();
         void setLcdYCompare(uint8_t data);
-        void setSerialTransferControl(uint8_t data);
-        void setSerialTransferData(uint8_t data);
+        void setLcdYCoordinate();
         void setScrollX(uint8_t data);
         void setScrollY(uint8_t data);
-        void setDivider(uint8_t data);
+        void setSerialTransferControl(uint8_t data);
+        void setSerialTransferData(uint8_t data);
         void setTimerControl(uint8_t data);
         void setTimerCounter(uint8_t data);
         void setTimerModulo(uint8_t data);
+
         void updateRegisters(uint16_t cyclesExecuted);
     private:
         void updateLcdStatMode(uint16_t cyclesExecuted);

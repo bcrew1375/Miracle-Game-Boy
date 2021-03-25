@@ -120,7 +120,7 @@ void CPU::z80_cb_rr_reghl_addr16()
 void CPU::z80_cb_rrc_reg8(uint8_t *reg8)
 {
     registers.flagC = *reg8 & 0x01;
-    *reg8 = (*reg8 << 1) | ((*reg8 & 0x80) >> 7);
+    *reg8 = (*reg8 >> 1) | ((*reg8 & 0x01) << 7);
 
     if (*reg8 == 0)
         registers.flagZ = true;
@@ -137,7 +137,7 @@ void CPU::z80_cb_rrc_reghl_addr16()
     uint8_t data = memory->readByte(registers.HL);
 
     registers.flagC = data & 0x01;
-    data = (data << 1) | ((data & 0x80) >> 7);
+    data = (data >> 1) | ((data & 0x01) << 7);
     memory->writeByte(registers.HL, data);
 
     if (data == 0)
@@ -177,6 +177,9 @@ void CPU::z80_cb_sla_reg8(uint8_t *reg8)
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = false;
 }
 
 
@@ -187,7 +190,7 @@ void CPU::z80_cb_sla_reghl_addr16()
     if (data & 0x80)
         registers.flagC = true;
     else
-        registers.flagC = false;
+        registers.flagC = false;;
 
     data <<= 1;
     memory->writeByte(registers.HL, data);
@@ -196,12 +199,20 @@ void CPU::z80_cb_sla_reghl_addr16()
         registers.flagZ = true;
     else
         registers.flagZ = false;
+
+    registers.flagN = false;
+    registers.flagH = false;
 }
 
 
 void CPU::z80_cb_sra_reg8(uint8_t *reg8)
 {
-    // Preserve the sign.
+    if (*reg8 & 0x01)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    // Preserve the sign bit.
     *reg8 = (*reg8 >> 1) | (*reg8 & 0x80);
 
     if (*reg8 == 0)
@@ -211,7 +222,6 @@ void CPU::z80_cb_sra_reg8(uint8_t *reg8)
 
     registers.flagN = false;
     registers.flagH = false;
-    registers.flagC = false;
 }
 
 
@@ -219,7 +229,12 @@ void CPU::z80_cb_sra_reghl_addr16()
 {
     uint8_t data = memory->readByte(registers.HL);
 
-    // Preserve the sign.
+    if (data & 0x01)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    // Preserve the sign bit.
     data = (data >> 1) | (data & 0x80);
     memory->writeByte(registers.HL, data);
 
@@ -230,7 +245,6 @@ void CPU::z80_cb_sra_reghl_addr16()
 
     registers.flagN = false;
     registers.flagH = false;
-    registers.flagC = false;
 }
 
 

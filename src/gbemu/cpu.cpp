@@ -73,39 +73,41 @@ void CPU::handleInterrupts()
         // V-Blank
         if (((interruptRequestFlags & 0x01)) && ((enabledInterruptFlags & 0x01))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1E);
+            interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0040;
-            interruptMasterEnableFlag = false;
             halted = false;
         }
         // LCD Status
         else if (((interruptRequestFlags & 0x02)) && ((enabledInterruptFlags & 0x02))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1D);
+            interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0048;
-            interruptMasterEnableFlag = false;
             halted = false;
         }
         // Timer
         else if (((interruptRequestFlags & 0x04)) && ((enabledInterruptFlags & 0x04))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1B);
+            interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0050;
-            interruptMasterEnableFlag = false;
             halted = false;
         }
+        // Serial
         else if (((interruptRequestFlags & 0x08)) && ((enabledInterruptFlags & 0x08))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x17);
+            interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0058;
-            interruptMasterEnableFlag = false;
             halted = false;
         }
+        // Joypad
         else if (((interruptRequestFlags & 0x10)) && ((enabledInterruptFlags & 0x10))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0F);
+            interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0060;
-            interruptMasterEnableFlag = false;
             halted = false;
         }
     }
@@ -136,11 +138,11 @@ uint32_t CPU::execute() {
     uint8_t cbBitNumber;
     uint8_t *cbRegister;
 
-    if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC > 0xE000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
-        int j = 0;
+    //if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC > 0xE000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
+    //    int j = 0;
 
-    if (registers.PC == 0x2fa)
-        int j = 0;
+    //memory->writeByte(0x100, 0xE8);
+    //memory->writeByte(0x101, -20);
 
     opcode = memory->readByte(registers.PC);
     clockCyclesExecuted = clockCyclesTable[opcode];
@@ -148,15 +150,16 @@ uint32_t CPU::execute() {
     if (stopped == false) {
         if (halted == false)
             registers.PC++;
-        else if ((halted == true) && (interruptMasterEnableFlag == false)) {
+        else if ((halted == true) && (interruptMasterEnableFlag == false) && ((ioPorts->getInterruptRequestFlags() & 0x1F) != 0x00) && ((memory->readByte(0xFFFF) & 0x1F) != 0x00)) {
             halted = false; // This accounts for the HALT bug which stops the Program Counter from incrementing for one instruction
-                            // if HALT is used with interrupts disabled.
+                            // if HALT is used with IME disabled while there are interrupts enabled in IE and/or pending. Otherwise, the system halts permanently.
         }
     }
 
     else {
         // TO DO: Handle stopped condition.
     }
+
 
     switch (opcode) {
     case 0x00: z80_nop(); break;
@@ -362,8 +365,16 @@ uint32_t CPU::execute() {
     case 0xC8: z80_ret_z(); break;
     case 0xC9: z80_ret(); break;
     case 0xCA: z80_jp_z(); break;
+    // Handle the extended CB bit manipulation instructions.
     case 0xCB: {
         cbOpcode = memory->readByte(registers.PC);
+        clockCyclesExecuted += clockCyclesCBTable[cbOpcode];
+
+        // Decode the opcode's instruction type, bits 7-6, where b00 = rotate/shift, b01 = test bit, b10 = reset bit, b11 = set bit
+        cbInstructionType = cbOpcode & 0xC0;
+
+        // Decode the bit that will be operated on, bits 5-3, where b000 = bit 0, b001 = bit 1, b010 = bit 2, b011 = bit 3, b100 = bit 4, b101 = bit 5, b110 = bit 6, b111 = bit 7
+        cbBitNumber = cbOpcode & 0x38;
 
         // Decode the register number to operate on, bits 2-0, where b000 = B, b001 = C, b010 = D, b011 = E, b100 = H, b101 = L, b110 = (HL), b111 = A
         switch (cbOpcode & 0b00000111) {
@@ -376,12 +387,6 @@ uint32_t CPU::execute() {
         case 0b00000110: cbRegister = nullptr; break; // nullptr represents (HL), which will be handled by its own set of functions.
         case 0b00000111: cbRegister = &registers.A; break;
         }
-
-        // Decode the bit that will be operated on, bits 5-3, where b000 = bit 0, b001 = bit 1, b010 = bit 2, b011 = bit 3, b100 = bit 4, b101 = bit 5, b110 = bit 6, b111 = bit 7
-        cbBitNumber = cbOpcode & 0x38;
-
-        // Decode the opcode's instruction type, bits 7-6, where b00 = rotate/shift, b01 = test bit, b10 = reset bit, b11 = set bit
-        cbInstructionType = cbOpcode & 0xC0;
 
         if (cbRegister != nullptr) {
             switch (cbInstructionType) {
@@ -402,21 +407,21 @@ uint32_t CPU::execute() {
             case 0b01000000: {
                 // Create a mask to test the bit with.
                 cbBitNumber >>= 3;
-                cbBitNumber = 2^cbBitNumber;
+                cbBitNumber = 1 << cbBitNumber;
 
                 z80_cb_test_reg8_bit(cbRegister, cbBitNumber);
             } break;
             case 0b10000000: {
                 // Create a mask to reset the bit with.
                 cbBitNumber >>= 3;
-                cbBitNumber = 0xFF - 2^cbBitNumber;
+                cbBitNumber = 0xFF - (1 << cbBitNumber);
 
                 z80_cb_reset_reg8_bit(cbRegister, cbBitNumber);
             } break;
             case 0b11000000: {
                 // Create a mask to set the bit with.
                 cbBitNumber >>= 3;
-                cbBitNumber = 2^cbBitNumber;
+                cbBitNumber = 1 << cbBitNumber;
 
                 z80_cb_set_reg8_bit(cbRegister, cbBitNumber);
             } break;
@@ -440,21 +445,21 @@ uint32_t CPU::execute() {
             case 0b01000000: {
                 // Create a mask to test the bit with.
                 cbBitNumber >>= 3;
-                cbBitNumber = 2^cbBitNumber;
+                cbBitNumber = 1 << cbBitNumber;
 
                 z80_cb_test_reghl_addr16_bit(cbBitNumber);
             } break;
             case 0b10000000: {
                 // Create a mask to reset the bit with.
                 cbBitNumber >>= 3;
-                cbBitNumber = 0xFF - 2^cbBitNumber;
+                cbBitNumber = 0xFF - (1 << cbBitNumber);
 
                 z80_cb_reset_reghl_addr16_bit(cbBitNumber);
             } break;
             case 0b11000000: {
                 // Create a mask to set the bit with.
                 cbBitNumber >>= 3;
-                cbBitNumber = 2^cbBitNumber;
+                cbBitNumber = 1 << cbBitNumber;
 
                 z80_cb_set_reghl_addr16_bit(cbBitNumber);
             } break;

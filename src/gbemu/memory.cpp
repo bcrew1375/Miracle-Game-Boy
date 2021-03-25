@@ -23,7 +23,6 @@ Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPo
     internalRamBank1 = new uint8_t[0x1000];
     spriteAttributeTable = new uint8_t[0xA0];
     highRam = new uint8_t[0x7F];
-    interruptEnable = new uint8_t[0x01];
 
     memset(romBank0, 0xFF, 0x4000);
     memset(romBank1, 0xFF, 0x4000);
@@ -33,7 +32,8 @@ Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPo
     memset(internalRamBank1, 0xFF, 0x1000);
     memset(spriteAttributeTable, 0xFF, 0xA0);
     memset(highRam, 0xFF, 0x7F);
-    memset(interruptEnable, 0xFF, 0x01);
+    interruptEnableFlags = 0x00;
+
 
     std::memcpy(this->romData, romData, romSizeInBytes);
 
@@ -77,6 +77,7 @@ uint8_t Memory::readByte(uint16_t address)
     }
     else if (address < 0xFF80) {
         switch (address) {
+        case 0xFF00: return ioPorts->getController(); break;
         case 0xFF01: return ioPorts->getSerialTransferData(); break;
         case 0xFF02: return ioPorts->getSerialTransferControl(); break;
         case 0xFF04: return ioPorts->getDivider(); break;
@@ -97,7 +98,7 @@ uint8_t Memory::readByte(uint16_t address)
         return highRam[address - 0xFF80];
     }
     else if (address == 0xFFFF) {
-        return interruptEnable[0];
+        return interruptEnableFlags;
     }
     else
         return 0xFF;
@@ -108,7 +109,8 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 {
     // Writing to ROM bank 1 has no effect but leave this here for completion's sake.
     if (address >= 0x0000 && address < 0x4000) {
-
+        // Temporary. Writes should not allowed here.
+        romBank0[address] = data;
     }
 
     // Depending on the cartridge type, writing here may replace ROM bank 1 for the bank indicated by the written value;
@@ -145,13 +147,14 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         spriteAttributeTable[address - 0xFE00] = data;
     }
 
-    // Unusable memory space. Do nothing;
+    // Unusable memory space. Do nothing.
     else if (address < 0xFF00) {
     }
 
     // Writing to this space will have various effects depending on the register written to.
     else if (address < 0xFF80) {
         switch (address) {
+        case 0xFF00: ioPorts->setController(data); break;
         case 0xFF01: ioPorts->setSerialTransferData(data); break;
         case 0xFF02: ioPorts->setSerialTransferControl(data); break;
         case 0xFF04: ioPorts->setDivider(data); break;
@@ -175,7 +178,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 
     // The 3 most significant bits of the IME are unwrittable and are always high.
     else if (address == 0xFFFF) {
-        interruptEnable[0] = (data & 0x1F) | 0xE0;
+        interruptEnableFlags = (data & 0x1F) | 0xE0;
     }
 }
 

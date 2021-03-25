@@ -158,12 +158,12 @@ void CPU::z80_add_reghl_reg16(uint16_t *reg16)
 {
     registers.flagN = 0;
 
-    if (((registers.L & 0x0F) + (*reg16 & 0x0F)) > 0x0F)
+    if (((registers.HL & 0x0FFF) + (*reg16 & 0x0FFF)) > 0x0FFF)
         registers.flagH = true;
     else
         registers.flagH = false;
 
-    if ((registers.L + (*reg16 & 0xFF)) > 0xFF)
+    if ((registers.HL + *reg16) > 0xFFFF)
         registers.flagC = true;
     else
         registers.flagC = false;
@@ -180,12 +180,12 @@ void CPU::z80_add_sp_dat8()
     registers.flagZ = 0;
     registers.flagN = 0;
 
-    if (((registers.SP & 0x0F) + (data & 0xF)) > 0xF)
+    if (((registers.SP & 0x000F) + (uint8_t)(data & 0x000F)) > 0x000F)
         registers.flagH = true;
     else
         registers.flagH = false;
 
-    if ((registers.SP + data) > 0xFF)
+    if (((registers.SP & 0x00FF) + (uint8_t)data) > 0x00FF)
         registers.flagC = true;
     else
         registers.flagC = false;
@@ -276,9 +276,32 @@ void CPU::z80_cpl()
 }
 
 
-void CPU::z80_daa()
+void CPU::z80_daa() // This instruction creates the packed binary-coded decimal representation of register A by converting from base 10 to base 16.
 {
+    if (registers.flagN == true)
+    {
+        if (registers.flagC == true)
+            registers.A -= 0x60;
+        if (registers.flagH == true)
+            registers.A -= 0x06;
+    }
+    else
+    {
+        if ((registers.flagC == true) || (registers.A > 0x99))
+        {
+            registers.A += 0x60;
+            registers.flagC = true;
+        }
+        if ((registers.flagH == true) || ((registers.A & 0x0F) > 0x09))
+            registers.A += 0x06;
+    }
 
+    if (registers.A == 0)
+        registers.flagZ = true;
+    else
+        registers.flagZ = false;
+
+    registers.flagH = false;
 }
 
 
@@ -583,17 +606,29 @@ void CPU::z80_ld_reghl_addr16_reg8(uint8_t *reg8)
 
 void CPU::z80_ld_reghl_sp_add_dat8()
 {
-    uint16_t data = registers.SP + (int8_t)memory->readByte(registers.PC);
+    int8_t data = (int8_t)memory->readByte(registers.PC);
     registers.PC++;
 
-    registers.HL = data;
+    registers.flagZ = 0;
+    registers.flagN = 0;
+
+    if (((registers.SP & 0x000F) + (uint8_t)(data & 0x000F)) > 0x000F)
+        registers.flagH = true;
+    else
+        registers.flagH = false;
+
+    if (((registers.SP & 0x00FF) + (uint8_t)data) > 0x00FF)
+        registers.flagC = true;
+    else
+        registers.flagC = false;
+
+    registers.HL = registers.SP + data;
 }
 
 
 void CPU::z80_ld_sp_reghl()
 {
-    registers.SPl = memory->readByte(registers.HL);
-    registers.SPh = memory->readByte(registers.HL + 1);
+    registers.SP = registers.HL;
 }
 
 
@@ -967,7 +1002,7 @@ void CPU::z80_rra()
 void CPU::z80_rrca()
 {
     registers.flagC = registers.A & 0x01;
-    registers.A = (registers.A << 1) | ((registers.A & 0x80) >> 7);
+    registers.A = (registers.A >> 1) | ((registers.A & 0x01) << 7);
 
     registers.flagZ = false;
     registers.flagN = false;

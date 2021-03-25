@@ -8,7 +8,6 @@ System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes)
     ioPorts = new IOPorts();
     memory = new Memory(bootROM, romData, romSizeInBytes, ioPorts);
     cpu = new CPU(memory, ioPorts);
-    interrupts = new Interrupts(memory, cpu);
     display = new Display(memory->getVideoRamPointer(), memory->getSpriteAttributeTablePointer(), ioPorts);
 
     clockSpeed = 4194304;
@@ -24,7 +23,6 @@ System::~System()
     delete ioPorts;
     delete memory;
     delete cpu;
-    delete interrupts;
     delete display;
 }
 
