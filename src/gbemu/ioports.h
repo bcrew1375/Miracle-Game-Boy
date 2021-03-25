@@ -11,8 +11,10 @@ class IOPorts
 
         bool getHBlankBeginFlag();
 
+        uint8_t getBackgroundPalette();
         uint8_t getController();
         uint8_t getDivider();
+        uint8_t getDmaTransfer();
         uint8_t getInterruptRequestFlags();
         uint8_t getLcdControl();
         uint8_t getLcdStatus();
@@ -26,8 +28,10 @@ class IOPorts
         uint8_t getTimerCounter();
         uint8_t getTimerModulo();
 
+        void setBackgroundPalette(uint8_t data);
         void setController(uint8_t data);
         void setDivider(uint8_t data);
+        void setDmaTransfer(uint8_t data, uint8_t *spriteAttributeTable);
         void setInterruptRequestFlags(uint8_t data);
         void setLcdControl(uint8_t data);
         void setLcdStatus(uint8_t data);
@@ -45,32 +49,35 @@ class IOPorts
     private:
         void updateLcdStatMode(uint16_t cyclesExecuted);
 
+        uint8_t backgroundPalette;
         uint8_t controller;
-        uint8_t serialTransferData;
-        uint8_t serialTransferControl;
         uint8_t divider;
-        int16_t dividerCycles;
-        uint8_t timerCounter;
-        int16_t timerCycles;
-        uint16_t timerCyclesReset;
-        uint8_t timerModulo;
-        uint8_t timerControl;
-        uint8_t soundChannel1Sweep;
-        uint8_t soundChannel1Length;
-        uint8_t soundChannel1Envelope;
-        uint8_t soundChannel1FrequencyLo;
-        uint8_t soundChannel2FrequencyHi;
-        uint8_t soundChannel2Length;
+        uint8_t dmaTransfer;
+        uint8_t interruptRequestFlags;
         uint8_t lcdControl;
         uint8_t lcdStatus;
-        uint8_t lcdYCoordinate;
         uint8_t lcdYCompare;
+        uint8_t lcdYCoordinate;
         uint8_t scrollX;
         uint8_t scrollY;
-        uint8_t interruptRequestFlags;
+        uint8_t serialTransferControl;
+        uint8_t serialTransferData;
+        uint8_t soundChannel1Envelope;
+        uint8_t soundChannel1FrequencyLo;
+        uint8_t soundChannel1Length;
+        uint8_t soundChannel1Sweep;
+        uint8_t soundChannel2FrequencyHi;
+        uint8_t soundChannel2Length;
+        uint8_t spriteAttributeTable[0xA0];
+        uint8_t timerControl;
+        uint8_t timerCounter;
+        uint8_t timerModulo;
 
-        int16_t lcdStatModeCycles;
         bool hBlankBeginFlag;
+        int16_t dividerCycles;
+        int16_t timerCycles;
+        int32_t lcdStatModeCycles;
+        uint16_t timerCyclesReset;
 };
 
 #endif // IOPORTS_H

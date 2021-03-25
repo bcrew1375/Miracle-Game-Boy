@@ -22,14 +22,14 @@ class Memory
         IOPorts *ioPorts;
 
         uint8_t *romData;
-        uint8_t *romBank0;
-        uint8_t *romBank1;
-        uint8_t *videoRam;
-        uint8_t *externalRam;
-        uint8_t *internalRamBank0;
-        uint8_t *internalRamBank1;
-        uint8_t *spriteAttributeTable;
-        uint8_t *highRam;
+        uint8_t romBank0[0x4000];
+        uint8_t romBank1[0x4000];
+        uint8_t videoRam[0x2000];
+        uint8_t externalRam[0x1000];
+        uint8_t internalRamBank0[0x1000];
+        uint8_t internalRamBank1[0x1000];
+        uint8_t spriteAttributeTable[0xA0];
+        uint8_t highRam[0x7F];
         uint8_t interruptEnableFlags;
 };
 

@@ -1,12 +1,16 @@
+#include <iostream>
+
 #include "ioports.h"
 
 
 IOPorts::IOPorts()
 {
     // All values assume bootrom has just finished executing.
+    backgroundPalette = 0xFC;
     controller = 0xFF;
     divider = 0xAB;
     dividerCycles = 176;
+    dmaTransfer = 0x00;
     interruptRequestFlags = 0xE1;
     timerControl = 0xF8;
     timerCounter = 0x00;
@@ -17,10 +21,12 @@ IOPorts::IOPorts()
     lcdStatus = 0x82;
     lcdStatModeCycles = 80;
     lcdYCoordinate = 0x00;
+    lcdYCompare = 0x00;
     serialTransferControl = 0x7E;
     serialTransferData = 0x00;
     scrollY = 0;
     scrollX = 0;
+
     hBlankBeginFlag = false;
 }
 
@@ -36,6 +42,12 @@ bool IOPorts::getHBlankBeginFlag()
 }
 
 
+uint8_t IOPorts::getBackgroundPalette()
+{
+    return backgroundPalette;
+}
+
+
 uint8_t IOPorts::getController()
 {
     return controller;
@@ -45,6 +57,12 @@ uint8_t IOPorts::getController()
 uint8_t IOPorts::getDivider()
 {
     return divider;
+}
+
+
+uint8_t IOPorts::getDmaTransfer()
+{
+    return dmaTransfer;
 }
 
 
@@ -120,6 +138,12 @@ uint8_t IOPorts::getTimerModulo()
 }
 
 
+void IOPorts::setBackgroundPalette(uint8_t data)
+{
+    backgroundPalette = data;
+}
+
+
 void IOPorts::setController(uint8_t data)
 {
     // Only bits 4-5 are writeable. Bits 0-3 are set hi/lo depending on controller inputs. Bits 6-7 are unusable.
@@ -135,6 +159,13 @@ void IOPorts::setDivider(uint8_t data)
 }
 
 
+void IOPorts::setDmaTransfer(uint8_t data, uint8_t *spriteAttributeTable)
+{
+    dmaTransfer = data;
+    memcpy(this->spriteAttributeTable, spriteAttributeTable, 0xA0);
+}
+
+
 void IOPorts::setInterruptRequestFlags(uint8_t data)
 {
     interruptRequestFlags = 0xE0 | data;
@@ -144,6 +175,12 @@ void IOPorts::setInterruptRequestFlags(uint8_t data)
 void IOPorts::setLcdControl(uint8_t data)
 {
     lcdControl = data;
+
+    if (!(lcdControl & 0x80)) {
+        lcdStatus &= 0xFC;
+        lcdYCoordinate = 0;
+        lcdStatModeCycles = 80;
+    }
 }
 
 void IOPorts::setLcdStatus(uint8_t data)
@@ -155,7 +192,7 @@ void IOPorts::setLcdStatus(uint8_t data)
 
 void IOPorts::setLcdYCompare(uint8_t data)
 {
-    lcdYCoordinate = data;
+    lcdYCompare = data;
 }
 
 
@@ -223,40 +260,53 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
     uint8_t lcdStatMode = lcdStatus & 0x03;
 
     lcdStatModeCycles -= cyclesExecuted;
-    if ((lcdStatModeCycles <= 0) && (lcdYCoordinate < 144)) {
-        switch (lcdStatMode) {
-        case 0: lcdStatMode = 2; lcdStatModeCycles += 80; break;
-        case 2: lcdStatMode = 3; lcdStatModeCycles += 168; break; // Variable between 168 and 291 depending on sprite count. Assume 168 for now.
-        case 3: lcdStatMode = 0; lcdStatModeCycles += 208; break; // Variable between 85 and 208 depending on time taken for mode 3.
+    if (lcdStatModeCycles <= 0)
+    {
+        if (lcdYCoordinate < 144)
+        {
+            switch (lcdStatMode)
+            {
+            case 0: lcdStatMode = 2; lcdStatModeCycles += 80; break;
+            case 2: lcdStatMode = 3; lcdStatModeCycles += 168; break; // Variable between 168 and 291 depending on sprite count. Assume 168 for now.
+            case 3: lcdStatMode = 0; lcdStatModeCycles += 208; break; // Variable between 85 and 208 depending on time taken for mode 3.
+            }
+
+            if (lcdStatMode == 0x00)
+            {
+                // Request H-Blank interrupt if enabled.
+                if (lcdStatus & 0x08)
+                    interruptRequestFlags |= 0x02;
+                hBlankBeginFlag = true;
+            }
+
+            if (lcdStatMode == 0x02)
+                lcdYCoordinate++;
+
+            if (lcdYCoordinate == 144)
+            {
+                // V-Blank begins.
+                lcdStatMode = 0x01;
+                lcdStatModeCycles += 376; // Account for the 80 cycles added from switching to mode 2 by not adding them here.
+                interruptRequestFlags |= 0x01;
+                if (lcdStatus & 0x10)
+                    interruptRequestFlags |= 0x02;
+            }
         }
 
-        if (lcdStatMode == 0x02)
+        else if (lcdYCoordinate >= 144)
+        {
             lcdYCoordinate++;
-        if (lcdStatMode == 0x00) {
-            // Request H-Blank interrupt if enabled.
-            if (lcdStatus & 0x08)
-                interruptRequestFlags |= 0x02;
-            hBlankBeginFlag = true;
+            if (lcdYCoordinate == 154)
+            {
+                lcdYCoordinate = 0;
+                lcdStatMode = 0x02;
+                lcdStatModeCycles += 80;
+            }
+            else
+                lcdStatModeCycles += 456;
         }
     }
-    else if ((lcdYCoordinate == 144) && (lcdStatMode == 0x02)) {
-        lcdStatMode = 0x01;
-        lcdStatModeCycles += 376; // Account for the 80 cycles from mode 2 by not adding them here.
-        interruptRequestFlags |= 0x01;
-        if (lcdStatus & 0x10)
-            interruptRequestFlags |= 0x02;
-    }
-    else if ((lcdStatModeCycles <= 0) && (lcdYCoordinate >= 144)) {
-        lcdYCoordinate++;
-        if (lcdYCoordinate == 154) {
-            lcdYCoordinate = 0;
-            lcdStatMode = 0x02;
-            lcdStatModeCycles += 80;
-        }
-        else {
-            lcdStatModeCycles += 456;
-        }
-    }
+
 
     if (lcdYCoordinate == lcdYCompare) {
         lcdStatus |= 0x04;
@@ -297,4 +347,7 @@ void IOPorts::updateRegisters(uint16_t cyclesExecuted)
             }
         }
     }
+
+    if (lcdStatModeCycles < 0)
+        int i = 0;
 }

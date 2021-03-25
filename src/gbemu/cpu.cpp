@@ -109,6 +109,7 @@ void CPU::handleInterrupts()
             z80_push_reg16(&registers.PC);
             registers.PC = 0x0060;
             halted = false;
+            stopped = false;
         }
     }
 }

@@ -14,15 +14,7 @@ Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPo
 
     this->ioPorts = ioPorts;
 
-    // Create all necessary memory space buffers.
-    romBank0 = new uint8_t[0x4000];
-    romBank1 = new uint8_t[0x4000];
-    videoRam = new uint8_t[0x2000];
-    externalRam = new uint8_t[0x1000];
-    internalRamBank0 = new uint8_t[0x1000];
-    internalRamBank1 = new uint8_t[0x1000];
-    spriteAttributeTable = new uint8_t[0xA0];
-    highRam = new uint8_t[0x7F];
+    // Initialize all necessary memory space buffers.
 
     memset(romBank0, 0xFF, 0x4000);
     memset(romBank1, 0xFF, 0x4000);
@@ -33,7 +25,6 @@ Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPo
     memset(spriteAttributeTable, 0xFF, 0xA0);
     memset(highRam, 0xFF, 0x7F);
     interruptEnableFlags = 0x00;
-
 
     std::memcpy(this->romData, romData, romSizeInBytes);
 
@@ -91,6 +82,7 @@ uint8_t Memory::readByte(uint16_t address)
         case 0xFF43: return ioPorts->getScrollX(); break;
         case 0xFF44: return ioPorts->getLcdYCoordinate(); break;
         case 0xFF45: return ioPorts->getLcdYCompare(); break;
+        case 0xFF47: return ioPorts->getBackgroundPalette(); break;
         default: return 0; break;
         }
     }
@@ -109,8 +101,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 {
     // Writing to ROM bank 1 has no effect but leave this here for completion's sake.
     if (address >= 0x0000 && address < 0x4000) {
-        // Temporary. Writes should not allowed here.
-        romBank0[address] = data;
+
     }
 
     // Depending on the cartridge type, writing here may replace ROM bank 1 for the bank indicated by the written value;
@@ -168,6 +159,13 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         case 0xFF43: ioPorts->setScrollX(data); break;
         case 0xFF44: ioPorts->setLcdYCoordinate(); break;
         case 0xFF45: ioPorts->setLcdYCompare(data); break;
+        case 0xFF46: for (int i = 0; i < 0xA0; i++)
+                     {
+                         spriteAttributeTable[i] = this->readByte((data << 8) + i);
+                     }
+                     ioPorts->setDmaTransfer(data, spriteAttributeTable);
+        break;
+        case 0xFF47: ioPorts->setBackgroundPalette(data); break;
         default: return; break;
         }
     }
@@ -176,7 +174,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         highRam[address - 0xFF80] = data;
     }
 
-    // The 3 most significant bits of the IME are unwrittable and are always high.
+    // The 3 most significant bits of the IME are unwrittable and are always hi.
     else if (address == 0xFFFF) {
         interruptEnableFlags = (data & 0x1F) | 0xE0;
     }
