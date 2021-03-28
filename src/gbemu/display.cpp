@@ -28,28 +28,39 @@ uint32_t *Display::getFrameBuffer()
 
 void Display::createScanline()
 {
-    getBackgroundTileMap();
-    getBackgroundTileBytesLine();
-    //getSpriteLine();
+    uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
+
+    if (ioPorts->getLcdControl() & 0x80)
+    {
+        getBackgroundTileMap();
+        getBackgroundWindowScanline();
+        getSpriteScanline();
+
+        for (int x = 0; x < 160; x++)
+            finalDisplayBuffer[x + (currentLcdYCoordinate * 160)] = rgbaPixelColors[finalizedScanline[x]];
+    }
+    else
+    {
+        for (int x = 0; x < 160; x++)
+            finalDisplayBuffer[x + (currentLcdYCoordinate * 160)] = rgbaPixelColors[0];
+    }
 }
 
 
-// Convert a tile line from 2-bit color pixels to RGBA format.
-void Display::convertTileData(uint16_t tileData)
+// Convert a tile line's bytes to its palette color values.
+void Display::convertTileData(uint16_t tileData, uint8_t palette)
 {
-    uint8_t backgroundPalette = ioPorts->getBackgroundPalette();
-    uint8_t backgroundColors[4] = { (uint8_t)(backgroundPalette & 0x03), (uint8_t)((backgroundPalette & 0x0C) >> 2),
-                                    (uint8_t)((backgroundPalette & 0x30) >> 4), (uint8_t)((backgroundPalette & 0xC0) >> 6) };
+    uint8_t paletteColors[4] = { (uint8_t)(palette & 0x03), (uint8_t)((palette & 0x0C) >> 2),
+                                 (uint8_t)((palette & 0x30) >> 4), (uint8_t)((palette & 0xC0) >> 6) };
 
-    // Decode and convert the tile bytes from 2bpp to RGBA format.
-    rgbaLine[0] = rgbaPixelColors[backgroundColors[((tileData & 0x8000) >> 14) + ((tileData & 0x0080) >> 7)]];
-    rgbaLine[1] = rgbaPixelColors[backgroundColors[((tileData & 0x4000) >> 13) + ((tileData & 0x0040) >> 6)]];
-    rgbaLine[2] = rgbaPixelColors[backgroundColors[((tileData & 0x2000) >> 12) + ((tileData & 0x0020) >> 5)]];
-    rgbaLine[3] = rgbaPixelColors[backgroundColors[((tileData & 0x1000) >> 11) + ((tileData & 0x0010) >> 4)]];
-    rgbaLine[4] = rgbaPixelColors[backgroundColors[((tileData & 0x0800) >> 10) + ((tileData & 0x0008) >> 3)]];
-    rgbaLine[5] = rgbaPixelColors[backgroundColors[((tileData & 0x0400) >>  9) + ((tileData & 0x0004) >> 2)]];
-    rgbaLine[6] = rgbaPixelColors[backgroundColors[((tileData & 0x0200) >>  8) + ((tileData & 0x0002) >> 1)]];
-    rgbaLine[7] = rgbaPixelColors[backgroundColors[((tileData & 0x0100) >>  7) + ((tileData & 0x0001)     )]];
+    tileLine[0] = paletteColors[((tileData & 0x8000) >> 14) + ((tileData & 0x0080) >> 7)];
+    tileLine[1] = paletteColors[((tileData & 0x4000) >> 13) + ((tileData & 0x0040) >> 6)];
+    tileLine[2] = paletteColors[((tileData & 0x2000) >> 12) + ((tileData & 0x0020) >> 5)];
+    tileLine[3] = paletteColors[((tileData & 0x1000) >> 11) + ((tileData & 0x0010) >> 4)];
+    tileLine[4] = paletteColors[((tileData & 0x0800) >> 10) + ((tileData & 0x0008) >> 3)];
+    tileLine[5] = paletteColors[((tileData & 0x0400) >>  9) + ((tileData & 0x0004) >> 2)];
+    tileLine[6] = paletteColors[((tileData & 0x0200) >>  8) + ((tileData & 0x0002) >> 1)];
+    tileLine[7] = paletteColors[((tileData & 0x0100) >>  7) + ((tileData & 0x0001)     )];
 }
 
 
@@ -63,9 +74,10 @@ void Display::getBackgroundTileMap()
 
 
 // Collects one full line of tile bytes from the 32 x 32 map.
-void Display::getBackgroundTileBytesLine()
+void Display::getBackgroundWindowScanline()
 {
     uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
+    uint8_t backgroundPalette = ioPorts->getBackgroundPalette();
 
     uint16_t tileDataPointerBase;
     uint8_t tileNumber;
@@ -80,47 +92,134 @@ void Display::getBackgroundTileBytesLine()
     uint8_t tileDataOffsetY = (currentLcdYCoordinate + scrollYOffset) % 8;
 
 
-    switch ((ioPorts->getLcdControl() & 0x10) >> 4)
+    switch (ioPorts->getLcdControl() & 0x10)
     {
-    case 0: tileDataPointerBase = 0x1000; break;
-    case 1: tileDataPointerBase = 0x0000; break;
+    case 0x00: tileDataPointerBase = 0x1000; break;
+    case 0x10: tileDataPointerBase = 0x0000; break;
     default: tileDataPointerBase = 0x0000; break;
     }
 
-    // Iterate through one horizontal line of the background map tile bytes.
-    // 21 iterations are necessary to account for when two tiles are partially on screen.
-    for (int mapX = 0; mapX < 21; mapX++)
+    // Check the background and window are enabled before drawing.
+    if (ioPorts->getLcdControl() & 0x01)
     {
-        // Modulation of the X and Y values is necessary for map wrapping.
-        tileNumber = backgroundTileMap[((mapX + tileNumberOffsetX) % 32) + (tileNumberOffsetY * 32)];
+        // Iterate through one horizontal line of the background map tile bytes.
+        // 21 iterations are necessary to account for when two tiles are partially on screen.
+        for (int mapX = 0; mapX < 21; mapX++)
+        {
+            // Modulation of the X and Y values is necessary for map wrapping.
+            tileNumber = backgroundTileMap[((mapX + tileNumberOffsetX) % 32) + (tileNumberOffsetY * 32)];
 
-        if (tileDataPointerBase == 0x0000)
-            convertTileData(videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2)] +
-                           (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8));
-        else
-            convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2)] +
-                           (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8));
+            if (tileDataPointerBase == 0x0000)
+                convertTileData(videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2)] +
+                               (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), backgroundPalette);
+            else
+                convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2)] +
+                               (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8), backgroundPalette);
 
-        for (int x = 0; x < 8; x++)
-            // Only draw pixels that are in the viewport.
-            if ((((x - tileDataOffsetX) + (mapX * 8)) >= 0) && ((x - tileDataOffsetX + (mapX * 8)) < 160))
-                finalDisplayBuffer[((x - tileDataOffsetX) + (mapX * 8)) + (currentLcdYCoordinate * 160)] = rgbaLine[x];
+            for (int x = 0; x < 8; x++)
+            {
+                // Only draw pixels that are in the viewport.
+                if ((((x - tileDataOffsetX) + (mapX * 8)) >= 0) && ((x - tileDataOffsetX + (mapX * 8)) < 160))
+                    finalizedScanline[((x - tileDataOffsetX) + (mapX * 8))] = tileLine[x];
+            }
+        }
+    }
+    else
+    {
+        memset(finalizedScanline, backgroundPalette & 0x03, 160);
     }
 }
 
 
-void Display::getSpriteLine()
+void Display::getSpriteScanline()
 {
     uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
+    uint8_t sprites[10][4];
     uint8_t spriteXPosition;
     uint8_t spriteYPosition;
+    uint8_t spriteHeight = 8 << ((ioPorts->getLcdControl() & 0x04) >> 2); // Get the global sprite tile height bit. 0 = 8, 1 = 16.
+    uint8_t spritePalette;
+    uint8_t spriteCount = 0;
+    uint8_t backgroundPaletteColorIndex0 = ioPorts->getBackgroundPalette() & 0x03; // Necessary for background/window prioritization.
+    bool backgroundWindowPriority;
+    bool spriteXFlip;
+    bool spriteYFlip;
 
+    uint8_t tileNumber;
+    uint8_t tileDataMultiplier = spriteHeight * 2; // Sprite height of 16 means 32 bytes per tile instead of 16.
 
-    for (int spriteNumber = 0; spriteNumber < 40; spriteNumber++)
+    uint8_t tileDataOffsetX;
+    uint8_t tileDataOffsetY;
+
+    // Only draw if sprites are enabled.
+    if (ioPorts->getLcdControl() & 0x02)
     {
-        spriteYPosition = spriteAttributeTable[spriteNumber] - 16;
-        if (spriteYPosition >= currentLcdYCoordinate) {
+        for (int spriteNumber = 0; spriteNumber < 40; spriteNumber++)
+        {
+            spriteYPosition = spriteAttributeTable[spriteNumber * 4];
 
+            if (((spriteYPosition - 16) <= currentLcdYCoordinate) && (currentLcdYCoordinate < ((spriteYPosition - 16) + spriteHeight)))
+            {
+                // Gather all sprite attributes.
+                sprites[spriteCount][0] = spriteYPosition;
+                sprites[spriteCount][1] = spriteAttributeTable[(spriteNumber * 4) + 1];
+                sprites[spriteCount][2] = spriteAttributeTable[(spriteNumber * 4) + 2];
+                sprites[spriteCount][3] = spriteAttributeTable[(spriteNumber * 4) + 3];
+
+                spriteCount++;
+            }
+
+            if (spriteCount == 10)
+                break;
+        }
+
+        for (int spriteNumber = 0; spriteNumber < spriteCount; spriteNumber++)
+        {
+            spriteYPosition = sprites[spriteNumber][0];
+            spriteXPosition = sprites[spriteNumber][1];
+            tileNumber = sprites[spriteNumber][2];
+            if (spriteHeight == 16)
+                tileNumber &= 0xFE;
+
+            backgroundWindowPriority = sprites[spriteNumber][3] & 0x80;
+            spriteYFlip = sprites[spriteNumber][3] & 0x40;
+            spriteXFlip = sprites[spriteNumber][3] & 0x20;
+            switch (sprites[spriteNumber][3] & 0x10) {
+            case 0x00: spritePalette = ioPorts->getSpritePalette0(); break;
+            case 0x10: spritePalette = ioPorts->getSpritePalette1(); break;
+            default: spritePalette = 0x00; break;
+            }
+
+            if (spriteYFlip)
+                tileDataOffsetY = (currentLcdYCoordinate - (spriteYPosition - 16)) ^ (spriteHeight - 1); // If flipped, invert the data offset.
+            else
+                tileDataOffsetY = (currentLcdYCoordinate - (spriteYPosition - 16));
+
+            convertTileData(videoRam[(tileNumber * 16) + (tileDataOffsetY * 2)] +
+                           (videoRam[(tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), spritePalette);
+
+            tileDataOffsetX = 0;
+
+            for (int spriteX = (spriteXPosition - 8); spriteX < spriteXPosition; spriteX++)
+            {
+                if ((spriteX >= 0) && (spriteX < 160))
+                {
+                    //if (spriteXFlip)
+                    //    tileDataOffsetX ^= 7;
+                    if (tileLine[tileDataOffsetX] != (spritePalette & 0x03)) // Color index 0 for sprites isn't drawn.
+                    {
+                        if (backgroundWindowPriority == false)
+                            finalizedScanline[spriteX] = tileLine[tileDataOffsetX];
+                        else
+                        {
+                            // If the background/window takes priority, only overwrite the pixel color associated with index 0.
+                            if (finalizedScanline[spriteX] == backgroundPaletteColorIndex0)
+                                finalizedScanline[spriteX] = tileLine[tileDataOffsetX];
+                        }
+                    }
+                }
+                tileDataOffsetX++;
+            }
         }
     }
 }

@@ -7,8 +7,8 @@ System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes)
 {
     ioPorts = new IOPorts();
     memory = new Memory(bootROM, romData, romSizeInBytes, ioPorts);
-    cpu = new CPU(memory, ioPorts);
     display = new Display(memory->getVideoRamPointer(), memory->getSpriteAttributeTablePointer(), ioPorts);
+    cpu = new CPU(memory, ioPorts, display);
 
     clockSpeed = 4194304;
     displayRefreshRate = 59.73;
@@ -28,28 +28,17 @@ System::~System()
 
 
 void System::executeCycles() {
-    cyclesLeftToRun = cyclesPerFrame;
-
     // TO DO: Transfer the main execution loop to the CPU class to prevent calling "execute" for every instruction.
-    while (cyclesLeftToRun > 0) {
+    cyclesExecuted = cpu->execute(cyclesPerFrame);
+
+    // If the CPU ran less cycles than it was supposed to, it encountered an invalid opcode and has to be terminated.
+    if (cyclesExecuted < cyclesPerFrame) {
         previousOpcode = cpu->getOpcode();
         previousPC = cpu->getRegisterPC();
-
-        cyclesExecuted = cpu->execute();
-
-        // If the CPU ran 0 cycles, it encountered an invalid opcode and has to be terminated.
-        if (cyclesExecuted == 0) {
-            isRunning = false;
-            systemError = "Invalid opcode: " + std::to_string(previousOpcode) + " at PC: " + std::to_string(previousPC);
-        }
-
-        ioPorts->updateRegisters(cyclesExecuted);
-        if (ioPorts->getHBlankBeginFlag() == true)
-            display->createScanline();
-        cpu->handleInterrupts();
-
-        cyclesLeftToRun -= cyclesExecuted;
+        isRunning = false;
+        systemError = "Invalid opcode: " + std::to_string(previousOpcode) + " at PC: " + std::to_string(previousPC);
     }
+
     display->updateDisplayOutput();
 }
 
@@ -74,4 +63,10 @@ std::string System::getSystemError()
 uint32_t *System::getFrameBuffer()
 {
     return display->getFrameBuffer();
+}
+
+
+void System::setControllerInputs(bool *buttonInputs)
+{
+    ioPorts->setControllerInputs(buttonInputs);
 }

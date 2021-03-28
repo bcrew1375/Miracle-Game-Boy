@@ -7,8 +7,8 @@ IOPorts::IOPorts()
 {
     // All values assume bootrom has just finished executing.
     backgroundPalette = 0xFC;
-    controller = 0xFF;
-    divider = 0xAB;
+    controller = 0xCF;
+    divider = 0x18;
     dividerCycles = 176;
     dmaTransfer = 0x00;
     interruptRequestFlags = 0xE1;
@@ -22,10 +22,13 @@ IOPorts::IOPorts()
     lcdStatModeCycles = 80;
     lcdYCoordinate = 0x00;
     lcdYCompare = 0x00;
-    serialTransferControl = 0x7E;
-    serialTransferData = 0x00;
     scrollY = 0;
     scrollX = 0;
+    serialTransferControl = 0x7E;
+    serialTransferData = 0x00;
+    soundChannel1Sweep = 0x80;
+    spritePalette0 = 0x00;
+    spritePalette1 = 0x00;
 
     hBlankBeginFlag = false;
 }
@@ -120,6 +123,18 @@ uint8_t IOPorts::getSerialTransferData()
 }
 
 
+uint8_t IOPorts::getSpritePalette0()
+{
+    return spritePalette0;
+}
+
+
+uint8_t IOPorts::getSpritePalette1()
+{
+    return spritePalette1;
+}
+
+
 uint8_t IOPorts::getTimerControl()
 {
     return timerControl;
@@ -147,8 +162,36 @@ void IOPorts::setBackgroundPalette(uint8_t data)
 void IOPorts::setController(uint8_t data)
 {
     // Only bits 4-5 are writeable. Bits 0-3 are set hi/lo depending on controller inputs. Bits 6-7 are unusable.
-    controller &= 0xCF;
-    controller |= data & 0b00110000;
+    controller = 0xCF | (data & 0b00110000);
+
+    if (!(controller & 0x10))
+    {
+        controller &= 0xF0;
+
+        controller |= buttonInputs[0] << 3;
+        controller |= buttonInputs[1] << 2;
+        controller |= buttonInputs[2] << 1;
+        controller |= buttonInputs[3];
+
+        controller ^= 0x0F;
+    }
+    else if (!(controller & 0x20))
+    {
+        controller &= 0xF0;
+
+        controller |= buttonInputs[4] << 3;
+        controller |= buttonInputs[5] << 2;
+        controller |= buttonInputs[6] << 1;
+        controller |= buttonInputs[7];
+
+        controller ^= 0x0F;
+    }
+}
+
+
+void IOPorts::setControllerInputs(bool *buttonInputs)
+{
+    memcpy(&this->buttonInputs, buttonInputs, 8);
 }
 
 
@@ -223,6 +266,18 @@ void IOPorts::setSerialTransferControl(uint8_t data)
 void IOPorts::setSerialTransferData(uint8_t data)
 {
     serialTransferData = data;
+}
+
+
+void IOPorts::setSpritePalette0(uint8_t data)
+{
+    spritePalette0 = data;
+}
+
+
+void IOPorts::setSpritePalette1(uint8_t data)
+{
+    spritePalette1 = data;
 }
 
 
@@ -336,9 +391,11 @@ void IOPorts::updateRegisters(uint16_t cyclesExecuted)
 
     if (timerControl & 0x04) {
         timerCycles -= cyclesExecuted;
-        if (timerCycles < 0) {
-            timerCycles = timerCyclesReset;
+        while (timerCycles < 0) {
+            timerCycles += timerCyclesReset;
 
+            if (timerCycles < 0)
+                int b = 0;
             timerCounter++;
 
             if (timerCounter == 0) {
@@ -347,7 +404,4 @@ void IOPorts::updateRegisters(uint16_t cyclesExecuted)
             }
         }
     }
-
-    if (lcdStatModeCycles < 0)
-        int i = 0;
 }

@@ -42,6 +42,7 @@ class MainWindow : public QMainWindow
 
         void emulatedScreenUpdate();
         void statusBarUpdate();     
+        void on_actionInput_triggered();
 };
 
 #endif // MAINWINDOW_H

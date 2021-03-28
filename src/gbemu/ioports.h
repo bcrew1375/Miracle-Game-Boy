@@ -24,6 +24,8 @@ class IOPorts
         uint8_t getScrollY();
         uint8_t getSerialTransferControl();
         uint8_t getSerialTransferData();
+        uint8_t getSpritePalette0();
+        uint8_t getSpritePalette1();
         uint8_t getTimerControl();
         uint8_t getTimerCounter();
         uint8_t getTimerModulo();
@@ -41,11 +43,15 @@ class IOPorts
         void setScrollY(uint8_t data);
         void setSerialTransferControl(uint8_t data);
         void setSerialTransferData(uint8_t data);
+        void setSpritePalette0(uint8_t data);
+        void setSpritePalette1(uint8_t data);
         void setTimerControl(uint8_t data);
         void setTimerCounter(uint8_t data);
         void setTimerModulo(uint8_t data);
 
         void updateRegisters(uint16_t cyclesExecuted);
+        void setControllerInputs(bool *buttonInputs);
+
     private:
         void updateLcdStatMode(uint16_t cyclesExecuted);
 
@@ -69,15 +75,18 @@ class IOPorts
         uint8_t soundChannel2FrequencyHi;
         uint8_t soundChannel2Length;
         uint8_t spriteAttributeTable[0xA0];
+        uint8_t spritePalette0;
+        uint8_t spritePalette1;
         uint8_t timerControl;
         uint8_t timerCounter;
         uint8_t timerModulo;
 
         bool hBlankBeginFlag;
         int16_t dividerCycles;
-        int16_t timerCycles;
+        int32_t timerCycles;
         int32_t lcdStatModeCycles;
-        uint16_t timerCyclesReset;
+        uint32_t timerCyclesReset;
+        bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
 };
 
 #endif // IOPORTS_H

@@ -5,13 +5,14 @@
 
 #include "ioports.h"
 #include "memory.h"
+#include "display.h"
 
 class CPU
 {
     public:
-        CPU(Memory *memory, IOPorts *ioPorts);
+        CPU(Memory *memory, IOPorts *ioPorts, Display *display);
 
-        uint32_t execute();
+        uint32_t execute(int32_t cyclesLeftToRun);
         void resetCPU();
         uint16_t getRegisterPC();
 
@@ -23,6 +24,7 @@ class CPU
     private:
         Memory *memory;
         IOPorts *ioPorts;
+        Display *display;
 
         union registers {
             struct { uint16_t AF, BC, DE, HL, SP, PC; };

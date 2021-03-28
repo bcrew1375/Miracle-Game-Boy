@@ -22,6 +22,7 @@ class System
         std::string getSystemError();
         uint32_t *getFrameBuffer();
         void handleInterrupts();
+        void setControllerInputs(bool *buttonInputs);
 
     private:
         Memory *memory;
@@ -36,7 +37,6 @@ class System
         uint32_t clockSpeed;
         double displayRefreshRate;
 
-        int32_t cyclesLeftToRun;
         uint32_t cyclesExecuted;
         uint8_t previousOpcode;
         uint16_t previousPC;

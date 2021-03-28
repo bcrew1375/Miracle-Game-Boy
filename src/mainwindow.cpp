@@ -1,5 +1,6 @@
-#include "mainwindow.h"
+#include <QInputDialog>
 
+#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 #include "platformsmap.h"
@@ -83,6 +84,7 @@ void MainWindow::on_actionRun_triggered()
     if (platform != nullptr) {
         statusBarTimer->start(1000);
         screenUpdateTimer->start(16);
+        installEventFilter(platform);
         platform->start();
     }
 }
@@ -109,4 +111,10 @@ void MainWindow::statusBarUpdate() {
 void MainWindow::emulatedScreenUpdate()
 {
     openGlWidget->updateEmulatedScreen(platform->getFrameBuffer());
+}
+
+
+void MainWindow::on_actionInput_triggered()
+{
+
 }

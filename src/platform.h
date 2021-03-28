@@ -1,14 +1,16 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include <QWidget>
 #include <QByteArray>
 #include <QTimer>
+#include <QKeyEvent>
 
 #include <stdint.h>
 
 #include "gbemu/system.h"
 
-class Platform : public QObject {
+class Platform : public QWidget {
     Q_OBJECT
 
     public:
@@ -28,6 +30,9 @@ class Platform : public QObject {
         uint16_t getFPS();
         uint32_t *getFrameBuffer();
 
+    protected:
+        virtual bool eventFilter(QObject *obj, QEvent *event);
+
     private:
         System *system;
         QTimer *speedRegulationTimer;
@@ -36,6 +41,8 @@ class Platform : public QObject {
         uint16_t FPS;
 
         QString errorMessage;
+
+        bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
 
     private slots:
         void executionLoop();

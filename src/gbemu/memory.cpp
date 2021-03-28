@@ -83,7 +83,9 @@ uint8_t Memory::readByte(uint16_t address)
         case 0xFF44: return ioPorts->getLcdYCoordinate(); break;
         case 0xFF45: return ioPorts->getLcdYCompare(); break;
         case 0xFF47: return ioPorts->getBackgroundPalette(); break;
-        default: return 0; break;
+        case 0xFF48: return ioPorts->getSpritePalette0(); break;
+        case 0xFF49: return ioPorts->getSpritePalette1(); break;
+        default: return 0xFF; break;
         }
     }
     else if (address < 0xFFFE) {
@@ -166,6 +168,8 @@ void Memory::writeByte(uint16_t address, uint8_t data)
                      ioPorts->setDmaTransfer(data, spriteAttributeTable);
         break;
         case 0xFF47: ioPorts->setBackgroundPalette(data); break;
+        case 0xFF48: ioPorts->setSpritePalette0(data); break;
+        case 0xFF49: ioPorts->setSpritePalette1(data); break;
         default: return; break;
         }
     }

@@ -127,6 +127,7 @@
      <addaction name="actionGame_Boy_Color"/>
     </widget>
     <addaction name="menuType"/>
+    <addaction name="actionInput"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEmulation"/>
@@ -155,6 +156,11 @@
   <action name="actionStop">
    <property name="text">
     <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionInput">
+   <property name="text">
+    <string>Input</string>
    </property>
   </action>
  </widget>
