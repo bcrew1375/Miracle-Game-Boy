@@ -276,7 +276,7 @@ void CPU::z80_cpl()
 }
 
 
-void CPU::z80_daa() // This instruction creates the packed binary-coded decimal representation of register A by converting from base 10 to base 16.
+void CPU::z80_daa() // This instruction creates the packed binary-coded decimal representation of register A by using the H and N flags.
 {
     if (registers.flagN == true)
     {

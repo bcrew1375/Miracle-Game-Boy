@@ -8,14 +8,10 @@ IOPorts::IOPorts()
     // All values assume bootrom has just finished executing.
     backgroundPalette = 0xFC;
     controller = 0xCF;
-    divider = 0x18;
-    dividerCycles = 176;
     dmaTransfer = 0x00;
     interruptRequestFlags = 0xE1;
     timerControl = 0xF8;
     timerCounter = 0x00;
-    timerCycles = 0;
-    timerCyclesReset = 0;
     timerModulo = 0x00;
     lcdControl = 0x91;
     lcdStatus = 0x82;
@@ -30,6 +26,7 @@ IOPorts::IOPorts()
     spritePalette0 = 0x00;
     spritePalette1 = 0x00;
 
+    internalCounter = 0;
     hBlankBeginFlag = false;
 }
 
@@ -59,7 +56,7 @@ uint8_t IOPorts::getController()
 
 uint8_t IOPorts::getDivider()
 {
-    return divider;
+    return (internalCounter & 0xFF00) >> 8;
 }
 
 
@@ -168,10 +165,10 @@ void IOPorts::setController(uint8_t data)
     {
         controller &= 0xF0;
 
-        controller |= buttonInputs[0] << 3;
-        controller |= buttonInputs[1] << 2;
-        controller |= buttonInputs[2] << 1;
-        controller |= buttonInputs[3];
+        controller |= buttonInputs[0] << 3; // Down
+        controller |= buttonInputs[1] << 2; // Up
+        controller |= buttonInputs[2] << 1; // Left
+        controller |= buttonInputs[3];      // Right
 
         controller ^= 0x0F;
     }
@@ -179,10 +176,10 @@ void IOPorts::setController(uint8_t data)
     {
         controller &= 0xF0;
 
-        controller |= buttonInputs[4] << 3;
-        controller |= buttonInputs[5] << 2;
-        controller |= buttonInputs[6] << 1;
-        controller |= buttonInputs[7];
+        controller |= buttonInputs[4] << 3; // Start
+        controller |= buttonInputs[5] << 2; // Select
+        controller |= buttonInputs[6] << 1; // B
+        controller |= buttonInputs[7];      // A
 
         controller ^= 0x0F;
     }
@@ -197,8 +194,7 @@ void IOPorts::setControllerInputs(bool *buttonInputs)
 
 void IOPorts::setDivider(uint8_t data)
 {
-    divider = 0;
-    timerCounter = 0;
+    internalCounter = 0;
 }
 
 
@@ -285,7 +281,7 @@ void IOPorts::setTimerControl(uint8_t data)
 {
     timerControl = 0xF8 | data;
 
-    if (timerControl & 0x04) {
+    /*if (timerControl & 0x04) {
         switch (timerControl & 0x03) {
         case 0x00: timerCyclesReset = 1024; break;
         case 0x01: timerCyclesReset = 16; break;
@@ -294,7 +290,7 @@ void IOPorts::setTimerControl(uint8_t data)
         }
 
         timerCycles = timerCyclesReset;
-    }
+    }*/
 }
 
 
@@ -383,25 +379,6 @@ void IOPorts::updateRegisters(uint16_t cyclesExecuted)
     if (lcdControl & 0x80)
         updateLcdStatMode(cyclesExecuted);
 
-    dividerCycles -= cyclesExecuted;
-    if (dividerCycles < 0) {
-        divider++;
-        dividerCycles += 256;
-    }
-
-    if (timerControl & 0x04) {
-        timerCycles -= cyclesExecuted;
-        while (timerCycles < 0) {
-            timerCycles += timerCyclesReset;
-
-            if (timerCycles < 0)
-                int b = 0;
-            timerCounter++;
-
-            if (timerCounter == 0) {
-                timerCounter = timerModulo;
-                interruptRequestFlags |= 0x04;
-            }
-        }
-    }
+    // This is an internal counter that is incremented every clock cycle and determines the DIV and TIMA registers.
+    internalCounter += cyclesExecuted;
 }

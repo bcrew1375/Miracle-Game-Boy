@@ -57,7 +57,6 @@ class IOPorts
 
         uint8_t backgroundPalette;
         uint8_t controller;
-        uint8_t divider;
         uint8_t dmaTransfer;
         uint8_t interruptRequestFlags;
         uint8_t lcdControl;
@@ -82,10 +81,8 @@ class IOPorts
         uint8_t timerModulo;
 
         bool hBlankBeginFlag;
-        int16_t dividerCycles;
-        int32_t timerCycles;
+        uint16_t internalCounter;
         int32_t lcdStatModeCycles;
-        uint32_t timerCyclesReset;
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
 };
 
