@@ -52,18 +52,18 @@ void MainWindow::on_actionOpen_triggered() {
     else if (romHandle.isReadable()) {
         settings.setValue("lastOpenFilePath", QFileInfo(romFilename).path());
 
-        if (platform != nullptr)
-            delete platform;
-
         if (statusBarTimer != nullptr)
             delete statusBarTimer;
 
         if (screenUpdateTimer != nullptr)
             delete screenUpdateTimer;
 
-        platform = new Platform(availablePlatforms[ui->SystemType->checkedAction()->text().toStdString()]);
+        if (platform != nullptr)
+            delete platform;
+
         statusBarTimer = new QTimer(this);
         screenUpdateTimer = new QTimer(this);
+        platform = new Platform(availablePlatforms[ui->SystemType->checkedAction()->text().toStdString()]);
 
         platform->loadRomFile(bootROM.readAll(), romHandle.readAll());
 

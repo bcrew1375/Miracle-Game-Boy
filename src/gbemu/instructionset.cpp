@@ -501,7 +501,6 @@ void CPU::z80_jr_offset()
 }
 
 
-
 void CPU::z80_jr_z()
 {
     int8_t offset = (int8_t)memory->readByte(registers.PC);

@@ -17,7 +17,6 @@ class CPU
         uint16_t getRegisterPC();
 
         void handleInterrupts();
-        uint8_t getOpcode();
         bool getInterruptMasterEnableFlag();
         void setInterruptMasterEnableFlag(bool state);
 
@@ -26,7 +25,8 @@ class CPU
         IOPorts *ioPorts;
         Display *display;
 
-        union registers {
+        union registers
+        {
             struct { uint16_t AF, BC, DE, HL, SP, PC; };
             struct { uint8_t F, A, C, B, E, D, L, H, SPl, SPh, PCl, PCh; };
             struct { bool nullbit0:1, nullbit1:1, nullbit2:1, nullbit3:1, flagC:1, flagH:1, flagN:1, flagZ:1; };
@@ -35,7 +35,6 @@ class CPU
         bool halted;
         bool stopped;
         bool interruptMasterEnableFlag;
-        uint8_t opcode;
         uint32_t clockCyclesExecuted;
 
         void z80_adc_rega_dat8();
@@ -129,7 +128,6 @@ class CPU
         void z80_sub_rega_dat8();
         void z80_sub_rega_reg8(uint8_t *reg8);
         void z80_sub_rega_reghl_addr16();
-
 
         void z80_cb_rl_reg8(uint8_t *reg8);
         void z80_cb_rr_reg8(uint8_t *reg8);

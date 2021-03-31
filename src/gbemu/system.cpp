@@ -33,8 +33,6 @@ void System::executeCycles() {
 
     // If the CPU ran less cycles than it was supposed to, it encountered an invalid opcode and has to be terminated.
     if (cyclesExecuted < cyclesPerFrame) {
-        previousOpcode = cpu->getOpcode();
-        previousPC = cpu->getRegisterPC();
         isRunning = false;
         systemError = "Invalid opcode: " + std::to_string(previousOpcode) + " at PC: " + std::to_string(previousPC);
     }
