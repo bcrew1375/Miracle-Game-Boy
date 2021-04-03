@@ -175,7 +175,7 @@ void Display::getSpriteScanline()
     uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
     uint8_t sprites[10][4];
     uint8_t spriteXPosition;
-    uint8_t spriteYPosition;
+    int16_t spriteYPosition;
     uint8_t spriteHeight = 8 << ((ioPorts->getLcdControl() & 0x04) >> 2); // Get the global sprite tile height bit. 0 = 8, 1 = 16.
     uint8_t spritePalette;
     uint8_t spriteCount = 0;
@@ -194,9 +194,9 @@ void Display::getSpriteScanline()
     {
         for (int spriteNumber = 0; spriteNumber < 40; spriteNumber++)
         {
-            spriteYPosition = spriteAttributeTable[spriteNumber * 4];
+            spriteYPosition = spriteAttributeTable[spriteNumber * 4] - 16;
 
-            if (((spriteYPosition - 16) <= currentLcdYCoordinate) && (currentLcdYCoordinate < ((spriteYPosition - 16) + spriteHeight)))
+            if ((spriteYPosition <= currentLcdYCoordinate) && (currentLcdYCoordinate < (spriteYPosition + spriteHeight)))
             {
                 // Gather all sprite attributes.
                 sprites[spriteCount][0] = spriteYPosition;
@@ -229,16 +229,16 @@ void Display::getSpriteScanline()
             }
 
             if (spriteYFlip)
-                tileDataOffsetY = (currentLcdYCoordinate - (spriteYPosition - 16)) ^ (spriteHeight - 1); // If flipped, invert the data offset.
+                tileDataOffsetY = (currentLcdYCoordinate - spriteYPosition) ^ (spriteHeight - 1); // If flipped, invert the data offset.
             else
-                tileDataOffsetY = (currentLcdYCoordinate - (spriteYPosition - 16));
+                tileDataOffsetY = (currentLcdYCoordinate - spriteYPosition);
 
             convertTileData(videoRam[(tileNumber * 16) + (tileDataOffsetY * 2)] +
                            (videoRam[(tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), spritePalette);
 
             tileDataOffsetX = 0;
 
-            for (uint8_t spriteX = (spriteXPosition - 8); spriteX < spriteXPosition; spriteX++)
+            for (int16_t spriteX = (spriteXPosition - 8); spriteX < spriteXPosition; spriteX++)
             {
                 if ((spriteX >= 0) && (spriteX < 160))
                 {
@@ -255,9 +255,9 @@ void Display::getSpriteScanline()
                                 finalizedScanline[spriteX] = tileLine[tileDataOffsetX];
                         }
                     }
+                    if (spriteXFlip)
+                        tileDataOffsetX ^= 7;
                 }
-                if (spriteXFlip)
-                    tileDataOffsetX ^= 7;
                 tileDataOffsetX++;
             }
         }
