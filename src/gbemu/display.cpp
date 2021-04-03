@@ -185,7 +185,6 @@ void Display::getSpriteScanline()
     bool spriteYFlip;
 
     uint8_t tileNumber;
-    uint8_t tileDataMultiplier = spriteHeight * 2; // Sprite height of 16 means 32 bytes per tile instead of 16.
 
     uint8_t tileDataOffsetX;
     uint8_t tileDataOffsetY;
@@ -239,12 +238,12 @@ void Display::getSpriteScanline()
 
             tileDataOffsetX = 0;
 
-            for (int spriteX = (spriteXPosition - 8); spriteX < spriteXPosition; spriteX++)
+            for (uint8_t spriteX = (spriteXPosition - 8); spriteX < spriteXPosition; spriteX++)
             {
                 if ((spriteX >= 0) && (spriteX < 160))
                 {
-                    //if (spriteXFlip)
-                    //    tileDataOffsetX ^= 7;
+                    if (spriteXFlip)
+                        tileDataOffsetX ^= 7;
                     if (tileLine[tileDataOffsetX] != (spritePalette & 0x03)) // Color index 0 for sprites isn't drawn.
                     {
                         if (backgroundWindowPriority == false)
@@ -257,6 +256,8 @@ void Display::getSpriteScanline()
                         }
                     }
                 }
+                if (spriteXFlip)
+                    tileDataOffsetX ^= 7;
                 tileDataOffsetX++;
             }
         }
