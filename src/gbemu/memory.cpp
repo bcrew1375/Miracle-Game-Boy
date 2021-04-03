@@ -19,7 +19,7 @@ Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPo
     memset(romBank0, 0xFF, 0x4000);
     memset(romBank1, 0xFF, 0x4000);
     memset(videoRam, 0xFF, 0x2000);
-    memset(externalRam, 0xFF, 0x1000);
+    //memset(externalRam, 0xFF, 0x1000);
     memset(internalRamBank0, 0xFF, 0x1000);
     memset(internalRamBank1, 0xFF, 0x1000);
     memset(spriteAttributeTable, 0xFF, 0xA0);
@@ -30,8 +30,26 @@ Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPo
 
     // Load the first 32,768 bytes into the two 16 K ROM banks.
     std::memcpy(romBank0, &this->romData[0x0000], 0x4000);
-    //std::memcpy(romBank0, &bootROM[0x0000], 0x100);
-    std::memcpy(romBank1, &this->romData[0x4000], 0x4000);
+
+    mbcType = romBank0[0x0147];
+
+    // Determine if the cartridge uses extra hardware.
+    if (mbcType != 0x00)
+        memoryBankController = new MemoryBankController(this->romData);
+    else
+    {
+        memoryBankController = nullptr;
+        std::memcpy(romBank1, &this->romData[0x4000], 0x4000);
+    }
+}
+
+
+Memory::~Memory()
+{
+    delete romData;
+
+    if (memoryBankController != nullptr)
+        delete memoryBankController;
 }
 
 
@@ -41,14 +59,18 @@ uint8_t Memory::readByte(uint16_t address)
         return romBank0[address];
     }
     else if (address < 0x8000) {
-        return romBank1[address - 0x4000];
+        if (mbcType != 0x00)
+            return memoryBankController->readAddress(address);
+        else
+            return romBank1[address - 0x4000];
     }
     else if (address < 0xA000) {
         return videoRam[address - 0x8000];
     }
     // External RAM should only be readable if the cartridge supports it. Otherwise, return an undefined value(0xFF).
     else if (address < 0xC000) {
-        return externalRam[address - 0xA000];
+        //return externalRam[address - 0xA000];
+        return 0xFF;
     }
     else if (address < 0xD000) {
         return internalRamBank0[address - 0xC000];
@@ -102,13 +124,15 @@ uint8_t Memory::readByte(uint16_t address)
 void Memory::writeByte(uint16_t address, uint8_t data)
 {
     // Writing to ROM bank 1 has no effect but leave this here for completion's sake.
-    if (address >= 0x0000 && address < 0x4000) {
-
+    if (address < 0x4000) {
+        if (mbcType != 0x00)
+            memoryBankController->writeAddress(address, data);
     }
 
     // Depending on the cartridge type, writing here may replace ROM bank 1 for the bank indicated by the written value;
     else if (address < 0x8000) {
-
+        if (mbcType != 0x00)
+            memoryBankController->writeAddress(address, data);
     }
 
     else if (address < 0x9800) {
@@ -150,7 +174,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         case 0xFF00: ioPorts->setController(data); break;
         case 0xFF01: ioPorts->setSerialTransferData(data); break;
         case 0xFF02: ioPorts->setSerialTransferControl(data); break;
-        case 0xFF04: ioPorts->setDivider(data); break;
+        case 0xFF04: ioPorts->setDivider(); break;
         case 0xFF05: ioPorts->setTimerCounter(data); break;
         case 0xFF06: ioPorts->setTimerModulo(data); break;
         case 0xFF07: ioPorts->setTimerControl(data); break;
@@ -182,12 +206,6 @@ void Memory::writeByte(uint16_t address, uint8_t data)
     else if (address == 0xFFFF) {
         interruptEnableFlags = (data & 0x1F) | 0xE0;
     }
-}
-
-
-void Memory::write16bit(uint16_t address, uint16_t data)
-{
-
 }
 
 

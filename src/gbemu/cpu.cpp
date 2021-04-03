@@ -150,6 +150,10 @@ uint32_t CPU::execute(int32_t cyclesLeftToRun) {
         opcode = memory->readByte(registers.PC);
         clockCyclesExecuted = clockCyclesTable[opcode];
 
+
+        if (registers.PC == 0x02b6)
+            int i = 0;
+
         if (stopped == false) {
             if (halted == false)
                 registers.PC++;

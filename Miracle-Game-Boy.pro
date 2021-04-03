@@ -15,6 +15,7 @@ SOURCES += \
     src/gbemu/instructionsetcb.cpp \
     src/gbemu/ioports.cpp \
     src/gbemu/memory.cpp \
+    src/gbemu/memorybankcontroller.cpp \
     src/gbemu/system.cpp \
     src/main.cpp \
     src/mainwindow.cpp \
@@ -27,6 +28,7 @@ HEADERS += \
     src/gbemu/display.h \
     src/gbemu/ioports.h \
     src/gbemu/memory.h \
+    src/gbemu/memorybankcontroller.h \
     src/gbemu/system.h \
     src/mainwindow.h \
     src/opengl/opengl.h \
@@ -52,4 +54,3 @@ DISTFILES += \
 INCLUDEPATH += $$PWD/src/GLFW
 DEPENDPATH += $$PWD/src/GLFW
 
-QMAKE_CXXFLAGS_DEBUG += -O3

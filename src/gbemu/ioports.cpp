@@ -172,7 +172,7 @@ void IOPorts::setController(uint8_t data)
 
         controller ^= 0x0F;
     }
-    else if (!(controller & 0x20))
+    if (!(controller & 0x20))
     {
         controller &= 0xF0;
 
@@ -192,7 +192,7 @@ void IOPorts::setControllerInputs(bool *buttonInputs)
 }
 
 
-void IOPorts::setDivider(uint8_t data)
+void IOPorts::setDivider()
 {
     internalCounter = 0;
 }
@@ -375,10 +375,77 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
 
 void IOPorts::updateRegisters(uint16_t cyclesExecuted)
 {
+    uint16_t previousCounter;
+
     // Don't update LCD-related registers if the LCD isn't turned on.
     if (lcdControl & 0x80)
         updateLcdStatMode(cyclesExecuted);
 
-    // This is an internal counter that is incremented every clock cycle and determines the DIV and TIMA registers.
+    // This is an internal counter that is incremented for every clock cycle and determines the DIV and TIMA registers.
+    previousCounter = internalCounter;
     internalCounter += cyclesExecuted;
+
+    if (timerControl & 0x04)
+    {
+        // Delay the timer reset and interrupt request by at least 4 cycles.
+        if (timerCounterOverflow == true)
+        {
+            timerCounterOverflow = false;
+            timerCounter = timerModulo;
+            interruptRequestFlags |= 0x04;
+        }
+
+        switch (timerControl & 0x03)
+        {
+            case 0x00:
+            {
+                // Check for an overflow from bit 9.
+                if ((previousCounter & 0x0200) && (!(internalCounter & 0x0200)))
+                {
+                    timerCounter++;
+
+                    if (timerCounter == 0)
+                        timerCounterOverflow = true;
+                }
+            } break;
+            case 0x01:
+            {
+                // An exception for cases where the timer counter can increase twice on one instruction
+                // due to the timer's speed at this setting.
+                for (int i = 0; i < cyclesExecuted; i += 4)
+                {
+                    // Check for an overflow from bit 3.
+                    if (((previousCounter + i) & 0x0008) && (!(internalCounter & 0x0008)))
+                    {
+                        timerCounter++;
+
+                        if (timerCounter == 0)
+                            timerCounterOverflow = true;
+                    }
+                }
+            } break;
+            case 0x02:
+            {
+                // Check for an overflow from bit 5.
+                if ((previousCounter & 0x0020) && (!(internalCounter & 0x0020)))
+                {
+                    timerCounter++;
+
+                    if (timerCounter == 0)
+                        timerCounterOverflow = true;
+                }
+            } break;
+            case 0x03:
+            {
+                // Check for an overflow from bit 7.
+                if ((previousCounter & 0x0080) && (!(internalCounter & 0x0080)))
+                {
+                    timerCounter++;
+
+                    if (timerCounter == 0)
+                        timerCounterOverflow = true;
+                }
+            } break;
+        }
+    }
 }

@@ -32,7 +32,7 @@ class IOPorts
 
         void setBackgroundPalette(uint8_t data);
         void setController(uint8_t data);
-        void setDivider(uint8_t data);
+        void setDivider();
         void setDmaTransfer(uint8_t data, uint8_t *spriteAttributeTable);
         void setInterruptRequestFlags(uint8_t data);
         void setLcdControl(uint8_t data);
@@ -84,6 +84,7 @@ class IOPorts
         uint16_t internalCounter;
         int32_t lcdStatModeCycles;
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
+        bool timerCounterOverflow;
 };
 
 #endif // IOPORTS_H

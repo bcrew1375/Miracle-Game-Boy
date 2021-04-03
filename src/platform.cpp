@@ -50,13 +50,13 @@ void Platform::start() {
 
 void Platform::executionLoop() {
     // Execute the cycles of the emulated system for one frame.
+    system->setControllerInputs(buttonInputs);
     system->executeCycles();
     if (system->getIsRunning() == false) {
         this->stop();
         errorMessage = QString::fromStdString(system->getSystemError());
     }
     FPS++;
-//    emit screenUpdate();
 }
 
 
@@ -95,12 +95,12 @@ bool Platform::eventFilter(QObject *obj, QEvent *event)
         case Qt::Key_Shift: keyEvent->accept(); buttonInputs[5] = true; break;
         case Qt::Key_Z: keyEvent->accept(); buttonInputs[6] = true; break;
         case Qt::Key_X: keyEvent->accept(); buttonInputs[7] = true; break;
-        default: return false;
+        default: return false; break;
         }
 
-        system->setControllerInputs(buttonInputs);
+        //system->setControllerInputs(buttonInputs);
 
-        memset(buttonInputs, false, 8);
+        //memset(buttonInputs, false, 8);
     }
     else if (event->type() == QEvent::KeyRelease)
     {
@@ -116,10 +116,10 @@ bool Platform::eventFilter(QObject *obj, QEvent *event)
         case Qt::Key_Shift: keyEvent->accept(); buttonInputs[5] = false; break;
         case Qt::Key_Z: keyEvent->accept(); buttonInputs[6] = false; break;
         case Qt::Key_X: keyEvent->accept(); buttonInputs[7] = false; break;
-        default: return false;
+        default: return false; break;
         }
 
-        system->setControllerInputs(buttonInputs);
+        //system->setControllerInputs(buttonInputs);
     }
 
     return false;
