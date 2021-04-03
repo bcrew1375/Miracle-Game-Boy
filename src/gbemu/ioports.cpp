@@ -150,6 +150,18 @@ uint8_t IOPorts::getTimerModulo()
 }
 
 
+uint8_t IOPorts::getWindowX()
+{
+    return windowX;
+}
+
+
+uint8_t IOPorts::getWindowY()
+{
+    return windowY;
+}
+
+
 void IOPorts::setBackgroundPalette(uint8_t data)
 {
     backgroundPalette = data;
@@ -303,6 +315,18 @@ void IOPorts::setTimerCounter(uint8_t data)
 void IOPorts::setTimerModulo(uint8_t data)
 {
     timerModulo = data;
+}
+
+
+void IOPorts::setWindowX(uint8_t data)
+{
+    windowX = data;
+}
+
+
+void IOPorts::setWindowY(uint8_t data)
+{
+    windowY = data;
 }
 
 

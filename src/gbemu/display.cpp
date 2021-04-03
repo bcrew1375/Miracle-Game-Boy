@@ -91,20 +91,23 @@ void Display::getBackgroundWindowScanline()
     uint8_t tileDataOffsetX = scrollXOffset % 8;
     uint8_t tileDataOffsetY = (currentLcdYCoordinate + scrollYOffset) % 8;
 
-
-    switch (ioPorts->getLcdControl() & 0x10)
-    {
-    case 0x00: tileDataPointerBase = 0x1000; break;
-    case 0x10: tileDataPointerBase = 0x0000; break;
-    default: tileDataPointerBase = 0x0000; break;
-    }
+    uint16_t windowTileMapOffset;
+    uint8_t windowXOffset = ioPorts->getWindowX() - 7;
+    uint8_t windowYOffset = ioPorts->getWindowY();
 
     // Check the background and window are enabled before drawing.
     if (ioPorts->getLcdControl() & 0x01)
     {
+        switch (ioPorts->getLcdControl() & 0x10)
+        {
+        case 0x00: tileDataPointerBase = 0x1000; break;
+        case 0x10: tileDataPointerBase = 0x0000; break;
+        default: tileDataPointerBase = 0x0000; break;
+        }
+
         // Iterate through one horizontal line of the background map tile bytes.
         // 21 iterations are necessary to account for when two tiles are partially on screen.
-        for (int mapX = 0; mapX < 21; mapX++)
+        for (uint8_t mapX = 0; mapX < 21; mapX++)
         {
             // Modulation of the X and Y values is necessary for map wrapping.
             tileNumber = backgroundTileMap[((mapX + tileNumberOffsetX) % 32) + (tileNumberOffsetY * 32)];
@@ -121,6 +124,42 @@ void Display::getBackgroundWindowScanline()
                 // Only draw pixels that are in the viewport.
                 if ((((x - tileDataOffsetX) + (mapX * 8)) >= 0) && ((x - tileDataOffsetX + (mapX * 8)) < 160))
                     finalizedScanline[((x - tileDataOffsetX) + (mapX * 8))] = tileLine[x];
+            }
+        }
+
+
+        // The window has an additional enable bit. Check it before drawing the window.
+        if ((ioPorts->getLcdControl() & 0x20) && ((currentLcdYCoordinate - windowYOffset) >= 0))
+        {
+            switch (ioPorts->getLcdControl() & 0x40)
+            {
+            case 0x00: windowTileMapOffset = 0x1800; break;
+            case 0x40: windowTileMapOffset = 0x1C00; break;
+            default: windowTileMapOffset = 0x1800; break;
+            }
+
+
+            tileNumberOffsetY = (currentLcdYCoordinate - windowYOffset) / 8;
+            tileDataOffsetY = (currentLcdYCoordinate - windowYOffset) % 8;
+
+
+            for (uint8_t windowX = windowXOffset; windowX < 160; windowX += 8)
+            {
+                tileNumber = videoRam[windowTileMapOffset + ((windowX - windowXOffset) / 8) + (tileNumberOffsetY * 32)];
+
+                if (tileDataPointerBase == 0x0000)
+                    convertTileData(videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2)] +
+                                   (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), backgroundPalette);
+                else
+                    convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2)] +
+                                   (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8), backgroundPalette);
+
+                for (uint8_t x = 0; x < 8; x++)
+                {
+                    // Only draw pixels that are in the viewport.
+                    if ((x + windowX) < 160)
+                        finalizedScanline[x + windowX] = tileLine[x];
+                }
             }
         }
     }

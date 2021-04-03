@@ -107,6 +107,8 @@ uint8_t Memory::readByte(uint16_t address)
         case 0xFF47: return ioPorts->getBackgroundPalette(); break;
         case 0xFF48: return ioPorts->getSpritePalette0(); break;
         case 0xFF49: return ioPorts->getSpritePalette1(); break;
+        case 0xFF4A: return ioPorts->getWindowY(); break;
+        case 0xFF4B: return ioPorts->getWindowX(); break;
         default: return 0xFF; break;
         }
     }
@@ -194,6 +196,8 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         case 0xFF47: ioPorts->setBackgroundPalette(data); break;
         case 0xFF48: ioPorts->setSpritePalette0(data); break;
         case 0xFF49: ioPorts->setSpritePalette1(data); break;
+        case 0xFF4A: ioPorts->setWindowY(data); break;
+        case 0xFF4B: ioPorts->setWindowX(data); break;
         default: return; break;
         }
     }

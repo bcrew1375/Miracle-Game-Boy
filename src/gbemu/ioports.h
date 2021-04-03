@@ -29,6 +29,8 @@ class IOPorts
         uint8_t getTimerControl();
         uint8_t getTimerCounter();
         uint8_t getTimerModulo();
+        uint8_t getWindowX();
+        uint8_t getWindowY();
 
         void setBackgroundPalette(uint8_t data);
         void setController(uint8_t data);
@@ -48,6 +50,8 @@ class IOPorts
         void setTimerControl(uint8_t data);
         void setTimerCounter(uint8_t data);
         void setTimerModulo(uint8_t data);
+        void setWindowX(uint8_t data);
+        void setWindowY(uint8_t data);
 
         void updateRegisters(uint16_t cyclesExecuted);
         void setControllerInputs(bool *buttonInputs);
@@ -79,6 +83,8 @@ class IOPorts
         uint8_t timerControl;
         uint8_t timerCounter;
         uint8_t timerModulo;
+        uint8_t windowX;
+        uint8_t windowY;
 
         bool hBlankBeginFlag;
         uint16_t internalCounter;
