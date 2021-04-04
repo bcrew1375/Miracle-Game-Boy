@@ -257,12 +257,17 @@ void IOPorts::setLcdStatus(uint8_t data)
 void IOPorts::setLcdYCompare(uint8_t data)
 {
     lcdYCompare = data;
+
+    if (lcdYCoordinate == lcdYCompare) {
+        lcdStatus |= 0x04;
+        if (lcdStatus & 0x40)
+            interruptRequestFlags |= 0x02;
+    }
 }
 
 
 void IOPorts::setLcdYCoordinate()
 {
-    lcdYCoordinate = 0;
 }
 
 
@@ -405,18 +410,18 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
             else
                 lcdStatModeCycles += 456;
         }
+
+        if ((lcdYCoordinate == lcdYCompare) && ((lcdStatMode == 0x02) || (lcdStatMode == 0x01))) {
+            lcdStatus |= 0x04;
+            if (lcdStatus & 0x40)
+                interruptRequestFlags |= 0x02;
+        }
+        else
+            lcdStatus &= 0xFB;
     }
 
 
-    if (lcdYCoordinate == lcdYCompare) {
-        lcdStatus |= 0x04;
-        if (lcdStatus & 0x40)
-            interruptRequestFlags |= 0x02;
-    }
-    else
-        lcdStatus &= 0xFB;
-
-    // Clear the 3 least significant bits and write the new status.
+    // Clear the 2 least significant bits and write the new status.
     lcdStatus &= 0xFC;
     lcdStatus |= lcdStatMode;
 }

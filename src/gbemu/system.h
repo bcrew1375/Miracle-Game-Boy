@@ -33,11 +33,11 @@ class System
         bool isRunning;
         std::string systemError;
 
-        uint32_t cyclesPerFrame;
+        int32_t cyclesPerFrame;
         uint32_t clockSpeed;
         double displayRefreshRate;
 
-        uint32_t cyclesExecuted;
+        int32_t cyclesLeftToRun;
         uint8_t previousOpcode;
         uint16_t previousPC;
 };

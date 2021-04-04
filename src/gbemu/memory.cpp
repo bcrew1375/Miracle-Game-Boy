@@ -213,7 +213,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 
     // The 3 most significant bits of the IME are unwrittable and are always hi.
     else if (address == 0xFFFF) {
-        interruptEnableFlags = (data & 0x1F) | 0xE0;
+        interruptEnableFlags = data;
     }
 }
 

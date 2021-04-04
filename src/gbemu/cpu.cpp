@@ -134,7 +134,7 @@ void CPU::setInterruptMasterEnableFlag(bool state)
 }
 
 
-uint32_t CPU::execute(int32_t cyclesLeftToRun) {
+int32_t CPU::execute(int32_t cyclesLeftToRun) {
     uint8_t cbOpcode;
     uint8_t cbInstructionType;
     uint8_t cbBitNumber;
@@ -148,17 +148,8 @@ uint32_t CPU::execute(int32_t cyclesLeftToRun) {
         if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC >= 0xC000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
             int j = 0;
 
-        if (registers.PC == 0x3ce)
+        if (registers.PC == 0x20FF)
             int i = 0;
-
-        if (registers.HL == 0xC9f1)
-            int k = 0;
-
-        if (registers.SP == 0x909)
-            int l = 0;
-
-        if (registers.DE == 0x0002)
-            int j = 0;
 
         opcode = memory->readByte(registers.PC);
         clockCyclesExecuted = clockCyclesTable[opcode];

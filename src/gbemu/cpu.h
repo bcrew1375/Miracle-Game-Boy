@@ -12,7 +12,7 @@ class CPU
     public:
         CPU(Memory *memory, IOPorts *ioPorts, Display *display);
 
-        uint32_t execute(int32_t cyclesLeftToRun);
+        int32_t execute(int32_t cyclesLeftToRun);
         void resetCPU();
         uint16_t getRegisterPC();
 

@@ -29,10 +29,10 @@ System::~System()
 
 void System::executeCycles() {
     // TO DO: Transfer the main execution loop to the CPU class to prevent calling "execute" for every instruction.
-    cyclesExecuted = cpu->execute(cyclesPerFrame);
+    cyclesLeftToRun = cpu->execute(cyclesPerFrame);
 
     // If the CPU ran less cycles than it was supposed to, it encountered an invalid opcode and has to be terminated.
-    if (cyclesExecuted < cyclesPerFrame) {
+    if (cyclesLeftToRun > 0) {
         previousOpcode = cpu->getOpcode();
         previousPC = cpu->getRegisterPC();
         isRunning = false;
