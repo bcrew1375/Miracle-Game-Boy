@@ -98,6 +98,8 @@ uint8_t Memory::readByte(uint16_t address)
         case 0xFF06: return ioPorts->getTimerModulo(); break;
         case 0xFF07: return ioPorts->getTimerControl();
         case 0xFF0F: return ioPorts->getInterruptRequestFlags(); break;
+        case 0xFF10: return ioPorts->getSoundChannel1Sweep(); break;
+        case 0xFF11: return ioPorts->getSoundChannel1Length(); break;
         case 0xFF40: return ioPorts->getLcdControl(); break;
         case 0xFF41: return ioPorts->getLcdStatus(); break;
         case 0xFF42: return ioPorts->getScrollY(); break;
@@ -147,7 +149,8 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 
     // External RAM should only be writable if the cartridge supports it. Otherwise, do nothing.
     else if (address < 0xC000) {
-        //externalRam[address - 0xA000] = data;
+        if (mbcType != 0x00)
+            memoryBankController->writeAddress(address, data);
     }
 
     else if (address < 0xD000) {
@@ -181,6 +184,8 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         case 0xFF06: ioPorts->setTimerModulo(data); break;
         case 0xFF07: ioPorts->setTimerControl(data); break;
         case 0xFF0F: ioPorts->setInterruptRequestFlags(data); break;
+        case 0xFF10: ioPorts->setSoundChannel1Sweep(data); break;
+        case 0xFF11: ioPorts->setSoundChannel1Length(data); break;
         case 0xFF40: ioPorts->setLcdControl(data); break;
         case 0xFF41: ioPorts->setLcdStatus(data); break;
         case 0xFF42: ioPorts->setScrollY(data); break;

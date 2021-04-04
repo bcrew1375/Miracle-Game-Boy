@@ -9,12 +9,21 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     romBankNumber = 0x01;
 
     mbcType = romData[0x0147];
+    ramBankSize = romData[0x0149];
+    hasExternalRam = false;
+    ramEnabled = false;
 
     switch (mbcType)
     {
-        /*case 0x01: romBank1 = new uint8_t[0x4000]; break;
-        case 0x02: romBank1 = new uint8_t[0x4000]; break;
-        case 0x03: romBank1 = new uint8_t[0x4000]; break;*/
+        case 0x02:
+        case 0x03: hasExternalRam = true; break;
+        default: hasExternalRam = false; break;
+    }
+
+    switch (ramBankSize)
+    {
+        case 0x02: hasRamBanks = false; break;
+        default: hasRamBanks = true; break;
     }
 
     std::memcpy(romBank1, &this->romData[0x4000 * romBankNumber], 0x4000);
@@ -30,6 +39,13 @@ uint8_t MemoryBankController::readAddress(uint16_t address)
 {
     if ((address >= 0x4000) && (address < 0x8000))
         return romBank1[address - 0x4000];
+    else if ((address > 0xA000) && (address < 0xC000))
+    {
+        if (ramEnabled == true)
+            return ramBank[0][address - 0xA000];
+        else
+            return 0xFF;
+    }
     else
         return 0xFF;
 }
@@ -37,7 +53,14 @@ uint8_t MemoryBankController::readAddress(uint16_t address)
 
 void MemoryBankController::writeAddress(uint16_t address, uint8_t data)
 {
-    if ((address >= 0x2000) && (address < 0x4000))
+    if (address < 0x2000)
+    {
+        if (data & 0x0A)
+            ramEnabled = true;
+        else if (data == 0x00)
+            ramEnabled = false;
+    }
+    else if ((address >= 0x2000) && (address < 0x4000))
     {
         data &= 0x1F;
         if (data == 0x00)
@@ -47,5 +70,10 @@ void MemoryBankController::writeAddress(uint16_t address, uint8_t data)
         romBankNumber |= data;
 
         std::memcpy(romBank1, &romData[romBankNumber * 0x4000], 0x4000);
+    }
+    else if ((address >= 0xA000) && (address < 0xC000))
+    {
+        if (ramEnabled == true)
+            ramBank[0][address - 0xA000] = data;
     }
 }

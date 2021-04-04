@@ -22,11 +22,12 @@ IOPorts::IOPorts()
     scrollX = 0;
     serialTransferControl = 0x7E;
     serialTransferData = 0x00;
+    soundChannel1Length = 0xBF;
     soundChannel1Sweep = 0x80;
     spritePalette0 = 0x00;
     spritePalette1 = 0x00;
 
-    internalCounter = 0;
+    internalCounter = 0xAC00;
     hBlankBeginFlag = false;
 }
 
@@ -117,6 +118,18 @@ uint8_t IOPorts::getSerialTransferControl()
 uint8_t IOPorts::getSerialTransferData()
 {
     return serialTransferData;
+}
+
+
+uint8_t IOPorts::getSoundChannel1Length()
+{
+    return soundChannel1Length;
+}
+
+
+uint8_t IOPorts::getSoundChannel1Sweep()
+{
+    return soundChannel1Sweep;
 }
 
 
@@ -274,6 +287,18 @@ void IOPorts::setSerialTransferControl(uint8_t data)
 void IOPorts::setSerialTransferData(uint8_t data)
 {
     serialTransferData = data;
+}
+
+
+void IOPorts::setSoundChannel1Length(uint8_t data)
+{
+    soundChannel1Length = data;
+}
+
+
+void IOPorts::setSoundChannel1Sweep(uint8_t data)
+{
+    soundChannel1Sweep = data;
 }
 
 
