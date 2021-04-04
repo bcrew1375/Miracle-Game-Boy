@@ -127,13 +127,11 @@ uint8_t Memory::readByte(uint16_t address)
 
 void Memory::writeByte(uint16_t address, uint8_t data)
 {
-    // Writing to ROM bank 1 has no effect but leave this here for completion's sake.
     if (address < 0x4000) {
         if (mbcType != 0x00)
             memoryBankController->writeAddress(address, data);
     }
 
-    // Depending on the cartridge type, writing here may replace ROM bank 1 for the bank indicated by the written value;
     else if (address < 0x8000) {
         if (mbcType != 0x00)
             memoryBankController->writeAddress(address, data);

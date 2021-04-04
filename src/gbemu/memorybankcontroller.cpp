@@ -12,6 +12,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     ramBankSize = romData[0x0149];
     hasExternalRam = false;
     ramEnabled = false;
+    ramBankSelected = 0;
 
     switch (mbcType)
     {
@@ -39,7 +40,7 @@ uint8_t MemoryBankController::readAddress(uint16_t address)
 {
     if ((address >= 0x4000) && (address < 0x8000))
         return romBank1[address - 0x4000];
-    else if ((address > 0xA000) && (address < 0xC000))
+    else if ((address >= 0xA000) && (address < 0xC000))
     {
         if (ramEnabled == true)
             return ramBank[0][address - 0xA000];
@@ -71,9 +72,14 @@ void MemoryBankController::writeAddress(uint16_t address, uint8_t data)
 
         std::memcpy(romBank1, &romData[romBankNumber * 0x4000], 0x4000);
     }
+    else if ((address >= 0x4000) && (address < 0x6000))
+    {
+        if (hasRamBanks == true)
+            ramBankSelected = data;
+    }
     else if ((address >= 0xA000) && (address < 0xC000))
     {
         if (ramEnabled == true)
-            ramBank[0][address - 0xA000] = data;
+            ramBank[ramBankSelected][address - 0xA000] = data;
     }
 }

@@ -37,6 +37,7 @@ class Display
         uint32_t finalDisplayBuffer[160 * 144];
         uint32_t tileLine[8];
         uint8_t backgroundTileMap[32 * 32];
+        uint8_t windowLineCounter;
 };
 
 #endif // DISPLAY_H

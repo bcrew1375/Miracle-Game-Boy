@@ -19,6 +19,7 @@ class MemoryBankController
         uint8_t romBank1[0x4000];
         uint8_t romBankNumber;
         uint8_t ramBankSize;
+        uint8_t ramBankSelected;
         bool hasExternalRam;
         bool hasRamBanks;
         bool ramEnabled;

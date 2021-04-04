@@ -127,9 +127,11 @@ void Display::getBackgroundWindowScanline()
             }
         }
 
+        if (currentLcdYCoordinate == 0)
+            windowLineCounter = 0;
 
         // The window has an additional enable bit. Check it before drawing the window.
-        if ((ioPorts->getLcdControl() & 0x20) && ((currentLcdYCoordinate - windowYOffset) >= 0))
+        if ((ioPorts->getLcdControl() & 0x20) && ((currentLcdYCoordinate - windowYOffset) >= 0) && (windowXOffset < 160))
         {
             switch (ioPorts->getLcdControl() & 0x40)
             {
@@ -139,8 +141,8 @@ void Display::getBackgroundWindowScanline()
             }
 
 
-            tileNumberOffsetY = (currentLcdYCoordinate - windowYOffset) / 8;
-            tileDataOffsetY = (currentLcdYCoordinate - windowYOffset) % 8;
+            tileNumberOffsetY = windowLineCounter / 8;
+            tileDataOffsetY = windowLineCounter % 8;
 
 
             for (uint8_t windowX = windowXOffset; windowX < 160; windowX += 8)
@@ -161,6 +163,8 @@ void Display::getBackgroundWindowScanline()
                         finalizedScanline[x + windowX] = tileLine[x];
                 }
             }
+
+            windowLineCounter++;
         }
     }
     else
