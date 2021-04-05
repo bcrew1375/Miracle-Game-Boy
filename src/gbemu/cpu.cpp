@@ -54,6 +54,7 @@ void CPU::resetCPU() {
     memory->writeByte(0xFFFF, 0x00); // Interrupt Enable*/
 
     interruptMasterEnableFlag = false;
+    interruptEnableDelayFlag = false;
     stopped = false;
     halted = false;
 }
@@ -147,9 +148,6 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
     while (cyclesLeftToRun > 0) {
         if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC >= 0xC000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
             int j = 0;
-
-        if (registers.PC == 0x20FF)
-            int i = 0;
 
         opcode = memory->readByte(registers.PC);
         clockCyclesExecuted = clockCyclesTable[opcode];
@@ -538,7 +536,14 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
         if (ioPorts->getHBlankBeginFlag() == true)
             display->createScanline();
 
-        handleInterrupts();
+        // Accounts for the one instruction delay before enabling interrupts.
+        if (interruptEnableDelayFlag == false)
+            handleInterrupts();
+        else
+        {
+            interruptEnableDelayFlag = false;
+            interruptMasterEnableFlag = true;
+        }
 
         if (clockCyclesExecuted > 0)
             cyclesLeftToRun -= clockCyclesExecuted;

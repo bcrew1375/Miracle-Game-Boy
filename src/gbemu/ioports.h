@@ -26,6 +26,7 @@ class IOPorts
         uint8_t getSerialTransferData();
         uint8_t getSoundChannel1Length();
         uint8_t getSoundChannel1Sweep();
+        uint8_t getSoundOnOff();
         uint8_t getSpritePalette0();
         uint8_t getSpritePalette1();
         uint8_t getTimerControl();
@@ -49,6 +50,7 @@ class IOPorts
         void setSerialTransferData(uint8_t data);
         void setSoundChannel1Length(uint8_t data);
         void setSoundChannel1Sweep(uint8_t data);
+        void setSoundOnOff(uint8_t data);
         void setSpritePalette0(uint8_t data);
         void setSpritePalette1(uint8_t data);
         void setTimerControl(uint8_t data);
@@ -81,6 +83,7 @@ class IOPorts
         uint8_t soundChannel1Sweep;
         uint8_t soundChannel2FrequencyHi;
         uint8_t soundChannel2Length;
+        uint8_t soundOnOff;
         uint8_t spriteAttributeTable[0xA0];
         uint8_t spritePalette0;
         uint8_t spritePalette1;

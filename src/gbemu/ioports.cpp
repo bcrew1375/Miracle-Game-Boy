@@ -9,7 +9,7 @@ IOPorts::IOPorts()
     backgroundPalette = 0xFC;
     controller = 0xCF;
     dmaTransfer = 0x00;
-    interruptRequestFlags = 0xE1;
+    interruptRequestFlags = 0xE0;
     timerControl = 0xF8;
     timerCounter = 0x00;
     timerModulo = 0x00;
@@ -130,6 +130,12 @@ uint8_t IOPorts::getSoundChannel1Length()
 uint8_t IOPorts::getSoundChannel1Sweep()
 {
     return soundChannel1Sweep;
+}
+
+
+uint8_t IOPorts::getSoundOnOff()
+{
+    return soundOnOff;
 }
 
 
@@ -307,6 +313,12 @@ void IOPorts::setSoundChannel1Sweep(uint8_t data)
 }
 
 
+void IOPorts::setSoundOnOff(uint8_t data)
+{
+    soundOnOff = data & 0x80;
+}
+
+
 void IOPorts::setSpritePalette0(uint8_t data)
 {
     spritePalette0 = data;
@@ -385,7 +397,11 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
             }
 
             if (lcdStatMode == 0x02)
+            {
                 lcdYCoordinate++;
+                if (lcdStatus & 0x20)
+                    interruptRequestFlags |= 0x02;
+            }
 
             if (lcdYCoordinate == 144)
             {

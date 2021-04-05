@@ -69,8 +69,10 @@ uint8_t Memory::readByte(uint16_t address)
     }
     // External RAM should only be readable if the cartridge supports it. Otherwise, return an undefined value(0xFF).
     else if (address < 0xC000) {
-        //return externalRam[address - 0xA000];
-        return 0xFF;
+        if (mbcType != 0x00)
+            memoryBankController->readAddress(address);
+        else
+            return 0xFF;
     }
     else if (address < 0xD000) {
         return internalRamBank0[address - 0xC000];
@@ -78,8 +80,11 @@ uint8_t Memory::readByte(uint16_t address)
     else if (address < 0xE000) {
         return internalRamBank1[address - 0xD000];
     }
-    else if (address < 0xFE00) {
+    else if (address < 0xF000) {
         return internalRamBank0[address - 0xE000];
+    }
+    else if (address < 0xFE00) {
+        return internalRamBank1[address - 0xF000];
     }
     else if (address < 0xFEA0) {
         return spriteAttributeTable[address - 0xFE00];
@@ -96,10 +101,11 @@ uint8_t Memory::readByte(uint16_t address)
         case 0xFF04: return ioPorts->getDivider(); break;
         case 0xFF05: return ioPorts->getTimerCounter(); break;
         case 0xFF06: return ioPorts->getTimerModulo(); break;
-        case 0xFF07: return ioPorts->getTimerControl();
+        case 0xFF07: return ioPorts->getTimerControl(); break;
         case 0xFF0F: return ioPorts->getInterruptRequestFlags(); break;
         case 0xFF10: return ioPorts->getSoundChannel1Sweep(); break;
         case 0xFF11: return ioPorts->getSoundChannel1Length(); break;
+        case 0xFF26: return ioPorts->getSoundOnOff(); break;
         case 0xFF40: return ioPorts->getLcdControl(); break;
         case 0xFF41: return ioPorts->getLcdStatus(); break;
         case 0xFF42: return ioPorts->getScrollY(); break;
@@ -114,7 +120,7 @@ uint8_t Memory::readByte(uint16_t address)
         default: return 0xFF; break;
         }
     }
-    else if (address < 0xFFFE) {
+    else if (address < 0xFFFF) {
         return highRam[address - 0xFF80];
     }
     else if (address == 0xFFFF) {
@@ -184,6 +190,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         case 0xFF0F: ioPorts->setInterruptRequestFlags(data); break;
         case 0xFF10: ioPorts->setSoundChannel1Sweep(data); break;
         case 0xFF11: ioPorts->setSoundChannel1Length(data); break;
+        case 0xFF26: ioPorts->setSoundOnOff(data); break;
         case 0xFF40: ioPorts->setLcdControl(data); break;
         case 0xFF41: ioPorts->setLcdStatus(data); break;
         case 0xFF42: ioPorts->setScrollY(data); break;
@@ -205,11 +212,10 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         }
     }
 
-    else if (address < 0xFFFE) {
+    else if (address < 0xFFFF) {
         highRam[address - 0xFF80] = data;
     }
 
-    // The 3 most significant bits of the IME are unwrittable and are always hi.
     else if (address == 0xFFFF) {
         interruptEnableFlags = data;
     }

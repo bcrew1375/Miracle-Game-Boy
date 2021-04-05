@@ -35,6 +35,7 @@ class CPU
         bool halted;
         bool stopped;
         bool interruptMasterEnableFlag;
+        bool interruptEnableDelayFlag;
         uint8_t opcode;
         uint32_t clockCyclesExecuted;
 

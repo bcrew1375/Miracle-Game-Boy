@@ -67,8 +67,8 @@ void Display::convertTileData(uint16_t tileData, uint8_t palette)
 void Display::getBackgroundTileMap()
 {
     switch (ioPorts->getLcdControl() & 0x08) {
-    case 0: memcpy(backgroundTileMap, &videoRam[0x1800], 0x400); break;
-    case 1: memcpy(backgroundTileMap, &videoRam[0x1C00], 0x400); break;
+    case 0x00: memcpy(backgroundTileMap, &videoRam[0x1800], 0x400); break;
+    case 0x08: memcpy(backgroundTileMap, &videoRam[0x1C00], 0x400); break;
     }
 }
 
@@ -222,6 +222,7 @@ void Display::getSpriteScanline()
             tileNumber = sprites[spriteNumber][2];
             if (spriteHeight == 16)
                 tileNumber &= 0xFE;
+
 
             backgroundWindowPriority = sprites[spriteNumber][3] & 0x80;
             spriteYFlip = sprites[spriteNumber][3] & 0x40;

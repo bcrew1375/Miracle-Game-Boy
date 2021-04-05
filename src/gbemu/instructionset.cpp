@@ -57,7 +57,6 @@ void CPU::z80_adc_rega_reghl_addr16()
 {
     bool carry = registers.flagC;
     uint8_t data = memory->readByte(registers.HL);
-    registers.PC++;
 
     registers.flagN = false;
 
@@ -356,7 +355,7 @@ void CPU::z80_di()
 
 void CPU::z80_ei()
 {
-    interruptMasterEnableFlag = true;
+    interruptEnableDelayFlag = true;
 }
 
 
@@ -682,9 +681,6 @@ void CPU::z80_nop()
 
 void CPU::z80_pop_reg16(uint16_t *reg16)
 {
-    if ((registers.DE == 0x221) && (registers.HL == 0x193))
-        int i = 0;
-
     *reg16 = memory->readByte(registers.SP);
     registers.SP++;
     *reg16 += memory->readByte(registers.SP) << 8;

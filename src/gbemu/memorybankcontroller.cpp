@@ -43,7 +43,7 @@ uint8_t MemoryBankController::readAddress(uint16_t address)
     else if ((address >= 0xA000) && (address < 0xC000))
     {
         if (ramEnabled == true)
-            return ramBank[0][address - 0xA000];
+            return ramBank[ramBankSelected][address - 0xA000];
         else
             return 0xFF;
     }
@@ -56,7 +56,7 @@ void MemoryBankController::writeAddress(uint16_t address, uint8_t data)
 {
     if (address < 0x2000)
     {
-        if (data & 0x0A)
+        if (data & 0xA)
             ramEnabled = true;
         else if (data == 0x00)
             ramEnabled = false;
