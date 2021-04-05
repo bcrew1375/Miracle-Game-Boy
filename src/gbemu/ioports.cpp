@@ -196,10 +196,10 @@ void IOPorts::setController(uint8_t data)
     {
         controller &= 0xF0;
 
-        controller |= buttonInputs[0] << 3; // Down
-        controller |= buttonInputs[1] << 2; // Up
-        controller |= buttonInputs[2] << 1; // Left
-        controller |= buttonInputs[3];      // Right
+        controller |= (uint8_t)(buttonInputs[0] << 3); // Down
+        controller |= (uint8_t)(buttonInputs[1] << 2); // Up
+        controller |= (uint8_t)(buttonInputs[2] << 1); // Left
+        controller |= (uint8_t)(buttonInputs[3]);      // Right
 
         controller ^= 0x0F;
     }
@@ -207,10 +207,10 @@ void IOPorts::setController(uint8_t data)
     {
         controller &= 0xF0;
 
-        controller |= buttonInputs[4] << 3; // Start
-        controller |= buttonInputs[5] << 2; // Select
-        controller |= buttonInputs[6] << 1; // B
-        controller |= buttonInputs[7];      // A
+        controller |= (uint8_t)(buttonInputs[4] << 3); // Start
+        controller |= (uint8_t)(buttonInputs[5] << 2); // Select
+        controller |= (uint8_t)(buttonInputs[6] << 1); // B
+        controller |= (uint8_t)(buttonInputs[7]);      // A
 
         controller ^= 0x0F;
     }

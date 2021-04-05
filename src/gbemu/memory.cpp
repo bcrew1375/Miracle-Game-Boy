@@ -197,7 +197,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
         case 0xFF43: ioPorts->setScrollX(data); break;
         case 0xFF44: ioPorts->setLcdYCoordinate(); break;
         case 0xFF45: ioPorts->setLcdYCompare(data); break;
-        case 0xFF46: for (int i = 0; i < 0xA0; i++)
+        case 0xFF46: for (int i = 0x00; i < 0xA0; i++)
                      {
                          spriteAttributeTable[i] = this->readByte((data << 8) + i);
                      }

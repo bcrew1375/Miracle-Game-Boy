@@ -15,7 +15,7 @@ class Display
         uint32_t *getFrameBuffer();
 
     private:
-        void convertTileData(uint16_t tileData, uint8_t palette);
+        void convertTileData(uint16_t tileData, uint8_t palette, bool isSprite);
         void getBackgroundWindowScanline();
         void getBackgroundTileMap();
         void getSpriteScanline();
@@ -35,7 +35,7 @@ class Display
         uint8_t spriteScanlineBuffer[160];
         uint8_t finalizedScanline[160];
         uint32_t finalDisplayBuffer[160 * 144];
-        uint32_t tileLine[8];
+        uint8_t tileLine[8];
         uint8_t backgroundTileMap[32 * 32];
         uint8_t windowLineCounter;
 };

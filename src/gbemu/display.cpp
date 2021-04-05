@@ -48,10 +48,15 @@ void Display::createScanline()
 
 
 // Convert a tile line's bytes to its palette color values.
-void Display::convertTileData(uint16_t tileData, uint8_t palette)
+void Display::convertTileData(uint16_t tileData, uint8_t palette, bool isSprite)
 {
     uint8_t paletteColors[4] = { (uint8_t)(palette & 0x03), (uint8_t)((palette & 0x0C) >> 2),
                                  (uint8_t)((palette & 0x30) >> 4), (uint8_t)((palette & 0xC0) >> 6) };
+
+    // This allows the sprite drawing routine to recognize color index 0
+    // after substituting the palette values.
+    if (isSprite == true)
+        paletteColors[0] = 0xFF;
 
     tileLine[0] = paletteColors[((tileData & 0x8000) >> 14) + ((tileData & 0x0080) >> 7)];
     tileLine[1] = paletteColors[((tileData & 0x4000) >> 13) + ((tileData & 0x0040) >> 6)];
@@ -95,6 +100,9 @@ void Display::getBackgroundWindowScanline()
     uint8_t windowXOffset = ioPorts->getWindowX() - 7;
     uint8_t windowYOffset = ioPorts->getWindowY();
 
+    // Disable background and window for sprite testing.
+    //ioPorts->setLcdControl(ioPorts->getLcdControl() & 0xFE);
+
     // Check the background and window are enabled before drawing.
     if (ioPorts->getLcdControl() & 0x01)
     {
@@ -114,10 +122,12 @@ void Display::getBackgroundWindowScanline()
 
             if (tileDataPointerBase == 0x0000)
                 convertTileData(videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2)] +
-                               (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), backgroundPalette);
+                               (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8),
+                                backgroundPalette, false);
             else
                 convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2)] +
-                               (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8), backgroundPalette);
+                               (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8),
+                                backgroundPalette, false);
 
             for (int x = 0; x < 8; x++)
             {
@@ -151,10 +161,12 @@ void Display::getBackgroundWindowScanline()
 
                 if (tileDataPointerBase == 0x0000)
                     convertTileData(videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2)] +
-                                   (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), backgroundPalette);
+                                   (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8),
+                                    backgroundPalette, false);
                 else
                     convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2)] +
-                                   (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8), backgroundPalette);
+                                   (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8),
+                                    backgroundPalette, false);
 
                 for (uint8_t x = 0; x < 8; x++)
                 {
@@ -200,7 +212,7 @@ void Display::getSpriteScanline()
         {
             spriteYPosition = spriteAttributeTable[spriteNumber * 4] - 16;
 
-            if ((spriteYPosition <= currentLcdYCoordinate) && (currentLcdYCoordinate < (spriteYPosition + spriteHeight)))
+            if ((currentLcdYCoordinate >= spriteYPosition) && (currentLcdYCoordinate < (spriteYPosition + spriteHeight)))
             {
                 // Gather all sprite attributes.
                 sprites[spriteCount][0] = spriteYPosition;
@@ -239,7 +251,7 @@ void Display::getSpriteScanline()
                 tileDataOffsetY = (currentLcdYCoordinate - spriteYPosition);
 
             convertTileData(videoRam[(tileNumber * 16) + (tileDataOffsetY * 2)] +
-                           (videoRam[(tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), spritePalette);
+                           (videoRam[(tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), spritePalette, true);
 
             tileDataOffsetX = 0;
 
@@ -249,7 +261,7 @@ void Display::getSpriteScanline()
                 {
                     if (spriteXFlip)
                         tileDataOffsetX ^= 7;
-                    if (tileLine[tileDataOffsetX] != (spritePalette & 0x03)) // Color index 0 for sprites isn't drawn.
+                    if (tileLine[tileDataOffsetX] != 0xFF) // Color 0 isn't drawn for sprites.
                     {
                         if (backgroundWindowPriority == false)
                             finalizedScanline[spriteX] = tileLine[tileDataOffsetX];
@@ -260,6 +272,8 @@ void Display::getSpriteScanline()
                                 finalizedScanline[spriteX] = tileLine[tileDataOffsetX];
                         }
                     }
+                    //else
+                    //    finalizedScanline[spriteX] = rgbaPixelColors[3];
                     if (spriteXFlip)
                         tileDataOffsetX ^= 7;
                 }
