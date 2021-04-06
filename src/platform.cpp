@@ -6,10 +6,11 @@
 
 
 Platform::Platform(int systemType) {
-    speedRegulationTimer = new QTimer(this);
-    connect(speedRegulationTimer, SIGNAL(timeout()), this, SLOT(executionLoop()));
+    speedRegulationTimer = new QElapsedTimer();
+    //connect(speedRegulationTimer, SIGNAL(timeout()), this, SLOT(executionLoop()));
 
     resetFPS();
+    platformRunning = false;
 
     errorMessage = "";
 }
@@ -38,30 +39,35 @@ void Platform::setSystemType() {
 
 
 void Platform::start() {
-    speedRegulationTimer->start(round(1000 / system->getRefreshRate())); // Tie the emulation speed to the number of screen refreshes per second.
-
-    /*while (0 == 0) {
-        QApplication::processEvents();
-        //speedRegulationTimer->start(round(1000 / system->getRefreshRate())); // Tie the emulation speed to the number of screen refreshes per second.
-        executionLoop();
-    }*/
+    platformRunning = true;
+    executionLoop();
 }
 
 
 void Platform::executionLoop() {
-    // Execute the cycles of the emulated system for one frame.
-    system->setControllerInputs(buttonInputs);
-    system->executeCycles();
-    if (system->getIsRunning() == false) {
-        this->stop();
-        errorMessage = QString::fromStdString(system->getSystemError());
+    qint64 nanoSecondsPerFrame = 1000000000 / system->getRefreshRate();
+    speedRegulationTimer->start();
+
+    while (platformRunning == true)
+    {
+        if (speedRegulationTimer->nsecsElapsed() >= nanoSecondsPerFrame) {
+            speedRegulationTimer->restart();
+            // Execute the cycles of the emulated system for one frame.
+            system->setControllerInputs(buttonInputs);
+            system->executeCycles();
+            if (system->getIsRunning() == false) {
+                this->stop();
+                errorMessage = QString::fromStdString(system->getSystemError());
+            }
+            QApplication::processEvents();
+            FPS++;
+        }
     }
-    FPS++;
 }
 
 
 void Platform::stop() {
-    speedRegulationTimer->stop();
+    //speedRegulationTimer->stop();
 }
 
 

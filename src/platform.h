@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QByteArray>
 #include <QTimer>
+#include <QElapsedTimer>
 #include <QKeyEvent>
 
 #include <stdint.h>
@@ -35,10 +36,12 @@ class Platform : public QWidget {
 
     private:
         System *system;
-        QTimer *speedRegulationTimer;
+        //QTimer *speedRegulationTimer;
+        QElapsedTimer *speedRegulationTimer;
         uint8_t *romBuffer;
         uint8_t romSizeInBytes;
         uint16_t FPS;
+        bool platformRunning;
 
         QString errorMessage;
 
