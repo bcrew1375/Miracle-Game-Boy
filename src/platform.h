@@ -36,12 +36,16 @@ class Platform : public QWidget {
 
     private:
         System *system;
-        //QTimer *speedRegulationTimer;
+        QTimer *emulationUpdateTimer;
         QElapsedTimer *speedRegulationTimer;
         uint8_t *romBuffer;
         uint8_t romSizeInBytes;
         uint16_t FPS;
         bool platformRunning;
+        bool frameLocked;
+        quint64 nanoSecondsPerFrame;
+        double  milliSecondsPerFrame;
+        quint64 timeElapsed;
 
         QString errorMessage;
 

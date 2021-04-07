@@ -69,12 +69,15 @@ void MainWindow::on_actionOpen_triggered() {
 
         //connect(platform, SIGNAL(screenUpdate()), this, SLOT(emulatedScreenUpdate()));
         connect(statusBarTimer, SIGNAL(timeout()), this, SLOT(statusBarUpdate()));
-        connect(screenUpdateTimer, SIGNAL(timeout()), this, SLOT(emulatedScreenUpdate()));
+        connect(platform, SIGNAL(screenUpdate()), this, SLOT(emulatedScreenUpdate()));
     }
 }
 
 
 void MainWindow::on_actionExit_triggered() {
+    if (platform != nullptr)
+        platform->stop();
+
     QApplication::quit();
 }
 
