@@ -11,7 +11,7 @@ System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes)
     cpu = new CPU(memory, ioPorts, display);
 
     clockSpeed = 4194304;
-    displayRefreshRate = 59.73;
+    displayRefreshRate = 59.73; //59.72750056960583;
     cyclesPerFrame = (uint32_t)(clockSpeed / displayRefreshRate);
 
     isRunning = true;

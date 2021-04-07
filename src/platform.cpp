@@ -6,10 +6,14 @@
 
 
 Platform::Platform(int systemType) {
-    speedRegulationTimer = new QTimer(this);
-    connect(speedRegulationTimer, SIGNAL(timeout()), this, SLOT(executionLoop()));
+    emulationUpdateTimer = new QTimer(this);
+    emulationUpdateTimer->setTimerType(Qt::PreciseTimer);
+    speedRegulationTimer = new QElapsedTimer();
+    connect(emulationUpdateTimer, SIGNAL(timeout()), this, SLOT(executionLoop()));
 
     resetFPS();
+    platformRunning = false;
+    frameLocked = true;
 
     errorMessage = "";
 }
@@ -17,6 +21,7 @@ Platform::Platform(int systemType) {
 
 Platform::~Platform()
 {
+    delete emulationUpdateTimer;
     delete speedRegulationTimer;
     delete system;
 }
@@ -38,30 +43,46 @@ void Platform::setSystemType() {
 
 
 void Platform::start() {
-    speedRegulationTimer->start(round(1000 / system->getRefreshRate())); // Tie the emulation speed to the number of screen refreshes per second.
-
-    /*while (0 == 0) {
-        QApplication::processEvents();
-        //speedRegulationTimer->start(round(1000 / system->getRefreshRate())); // Tie the emulation speed to the number of screen refreshes per second.
-        executionLoop();
-    }*/
+    nanoSecondsPerFrame = 1000000000 / system->getRefreshRate();
+    milliSecondsPerFrame = (double)nanoSecondsPerFrame / 1000000;
+    timeElapsed = 0;
+    speedRegulationTimer->start();
+    executionLoop();
 }
 
 
 void Platform::executionLoop() {
-    // Execute the cycles of the emulated system for one frame.
+    qint8 timeDelay;
+
+    if (frameLocked == true)
+        timeDelay = round(milliSecondsPerFrame - (speedRegulationTimer->nsecsElapsed() / nanoSecondsPerFrame));
+    else
+        timeDelay = 1;
+
+    if (timeDelay <= 0)
+        timeDelay = 1;
+
+    timeElapsed += speedRegulationTimer->restart();
+    QTimer::singleShot(timeDelay, Qt::PreciseTimer, this, SLOT(executionLoop()));
+
     system->setControllerInputs(buttonInputs);
     system->executeCycles();
     if (system->getIsRunning() == false) {
         this->stop();
         errorMessage = QString::fromStdString(system->getSystemError());
     }
+    // Ensure the screen only updates at the system refresh rate
+    // even if the emulation is running faster.
+    if (timeElapsed >= milliSecondsPerFrame)
+    {
+        emit screenUpdate();
+        timeElapsed -= milliSecondsPerFrame;
+    }
     FPS++;
 }
 
 
 void Platform::stop() {
-    speedRegulationTimer->stop();
 }
 
 
@@ -95,6 +116,8 @@ bool Platform::eventFilter(QObject *obj, QEvent *event)
         case Qt::Key_Shift: keyEvent->accept(); buttonInputs[5] = true; break;
         case Qt::Key_Z: keyEvent->accept(); buttonInputs[6] = true; break;
         case Qt::Key_X: keyEvent->accept(); buttonInputs[7] = true; break;
+
+        case Qt::Key_Tab: frameLocked ^= true; break;
         default: return false; break;
         }
 
