@@ -107,6 +107,7 @@ void MainWindow::on_actionPause_triggered()
 void MainWindow::on_actionRun_triggered()
 {
     if (platform != nullptr) {
+        ui->actionRun->setDisabled(true);
         statusBarTimer->start(1000);
         installEventFilter(platform);
         platform->start();
