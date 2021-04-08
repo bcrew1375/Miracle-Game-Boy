@@ -13,25 +13,22 @@ class Memory
         Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts);
         ~Memory();
 
-        uint8_t readByte(uint16_t address);
-        uint16_t read16bit(uint16_t address);
-        void writeByte(uint16_t address, uint8_t data);
-        void write16bit(uint16_t address, uint16_t data);
-        uint8_t *getVideoRamPointer();
         uint8_t *getSpriteAttributeTablePointer();
-        uint8_t *getIoRegistersPointer();
+        uint8_t *getVideoRamPointer();
+        uint8_t readByte(uint16_t address);
+
+        void writeByte(uint16_t address, uint8_t data);
 
     private:
         IOPorts *ioPorts;
         MemoryBankController *memoryBankController;
 
         uint8_t *romData;
-        uint8_t mbcType;
-        //uint8_t externalRam[0x1000];
         uint8_t highRam[0x7F];
         uint8_t internalRamBank0[0x1000];
         uint8_t internalRamBank1[0x1000];
         uint8_t interruptEnableFlags;
+        uint8_t mbcType;
         uint8_t romBank0[0x4000];
         uint8_t romBank1[0x4000];
         uint8_t spriteAttributeTable[0xA0];

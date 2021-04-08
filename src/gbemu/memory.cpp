@@ -53,6 +53,18 @@ Memory::~Memory()
 }
 
 
+uint8_t *Memory::getSpriteAttributeTablePointer()
+{
+    return spriteAttributeTable;
+}
+
+
+uint8_t *Memory::getVideoRamPointer()
+{
+    return videoRam;
+}
+
+
 uint8_t Memory::readByte(uint16_t address)
 {
     if (address < 0x4000) {
@@ -219,23 +231,4 @@ void Memory::writeByte(uint16_t address, uint8_t data)
     else if (address == 0xFFFF) {
         interruptEnableFlags = data;
     }
-}
-
-
-uint8_t *Memory::getSpriteAttributeTablePointer()
-{
-    return spriteAttributeTable;
-}
-
-
-uint8_t *Memory::getIoRegistersPointer()
-{
-    //return ioPortRegisters;
-    return 0;
-}
-
-
-uint8_t *Memory::getVideoRamPointer()
-{
-    return videoRam;
 }

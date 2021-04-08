@@ -13,13 +13,6 @@ Display::Display(uint8_t *videoRam, uint8_t *spriteAttributeTable, IOPorts *ioPo
 }
 
 
-void Display::updateDisplayOutput()
-{
-    //convertBackgroundTileBytes();
-    //memcpy(finalDisplayBuffer, backgroundPixelBuffer, 160 * 144 * sizeof(uint32_t));
-}
-
-
 uint32_t *Display::getFrameBuffer()
 {
     return finalDisplayBuffer;

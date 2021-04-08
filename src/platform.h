@@ -18,38 +18,42 @@ class Platform : public QWidget {
         Platform(int systemType);
         ~Platform();
 
-        bool isRunning;
+        QString getErrorMessage();
+
         bool isPaused;
+        bool isRunning;
+
+        uint16_t getFPS();
+        uint32_t *getFrameBuffer();
 
         void loadRomFile(QByteArray bootROM, QByteArray romData);
         void pause();
+        void resetFPS();
         void setSystemType();
         void start();
         void stop();
-        void resetFPS();
-        QString getErrorMessage();
-        uint16_t getFPS();
-        uint32_t *getFrameBuffer();
 
     protected:
         virtual bool eventFilter(QObject *obj, QEvent *event);
 
     private:
-        System *system;
-        QTimer *emulationUpdateTimer;
         QElapsedTimer *speedRegulationTimer;
-        uint8_t *romBuffer;
-        uint8_t romSizeInBytes;
-        uint16_t FPS;
-        bool platformRunning;
-        bool frameLocked;
-        quint64 nanoSecondsPerFrame;
-        double  milliSecondsPerFrame;
-        quint64 timeElapsed;
-
         QString errorMessage;
 
+        System *system;
+
+        bool frameLocked;
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
+
+        double  milliSecondsPerFrame;
+
+        quint64 nanoSecondsPerFrame;
+        quint64 timeElapsed;
+
+        uint16_t FPS;
+
+        uint8_t *romBuffer;
+        uint8_t romSizeInBytes;
 
     private slots:
         void executionLoop();

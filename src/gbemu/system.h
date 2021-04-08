@@ -16,30 +16,35 @@ class System
         System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes);
         ~System();
 
-        double getRefreshRate();
-        void executeCycles();
         bool getIsRunning();
+
+        double getRefreshRate();
+
         std::string getSystemError();
+
         uint32_t *getFrameBuffer();
-        void handleInterrupts();
+
+        void executeCycles();
         void setControllerInputs(bool *buttonInputs);
 
     private:
-        Memory *memory;
         CPU *cpu;
         Display *display;
         IOPorts *ioPorts;
+        Memory *memory;
 
         bool isRunning;
-        std::string systemError;
 
-        int32_t cyclesPerFrame;
-        uint32_t clockSpeed;
         double displayRefreshRate;
 
         int32_t cyclesLeftToRun;
-        uint8_t previousOpcode;
+        int32_t cyclesPerFrame;
+
+        std::string systemError;
+
         uint16_t previousPC;
+        uint32_t clockSpeed;
+        uint8_t previousOpcode;
 };
 
 #endif // SYSTEM_H

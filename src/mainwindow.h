@@ -24,25 +24,24 @@ class MainWindow : public QMainWindow
         MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
 
-    public slots:
-
     private:
-        Ui::MainWindow *ui;
         OpenGlWidget *openGlWidget;
 
-        QTimer *screenUpdateTimer;
-        QTimer *statusBarTimer;
         Platform *platform;
 
-    private slots:
-        void on_actionOpen_triggered();
-        void on_actionExit_triggered();
-        void on_actionRun_triggered();
-        void on_actionPause_triggered();
+        QTimer *statusBarTimer;
 
+        Ui::MainWindow *ui;
+
+    private slots:
         void emulatedScreenUpdate();
-        void statusBarUpdate();     
+        void statusBarUpdate();
+
+        void on_actionExit_triggered();
         void on_actionInput_triggered();
+        void on_actionOpen_triggered();
+        void on_actionPause_triggered();
+        void on_actionRun_triggered();
 };
 
 #endif // MAINWINDOW_H

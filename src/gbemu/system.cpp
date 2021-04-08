@@ -27,22 +27,6 @@ System::~System()
 }
 
 
-void System::executeCycles() {
-    // TO DO: Transfer the main execution loop to the CPU class to prevent calling "execute" for every instruction.
-    cyclesLeftToRun = cpu->execute(cyclesPerFrame);
-
-    // If the CPU ran less cycles than it was supposed to, it encountered an invalid opcode and has to be terminated.
-    if (cyclesLeftToRun > 0) {
-        previousOpcode = cpu->getOpcode();
-        previousPC = cpu->getRegisterPC();
-        isRunning = false;
-        systemError = "Invalid opcode: " + std::to_string(previousOpcode) + " at PC: " + std::to_string(previousPC);
-    }
-
-    display->updateDisplayOutput();
-}
-
-
 bool System::getIsRunning()
 {
     return isRunning;
@@ -63,6 +47,20 @@ std::string System::getSystemError()
 uint32_t *System::getFrameBuffer()
 {
     return display->getFrameBuffer();
+}
+
+
+void System::executeCycles() {
+    // TO DO: Transfer the main execution loop to the CPU class to prevent calling "execute" for every instruction.
+    cyclesLeftToRun = cpu->execute(cyclesPerFrame);
+
+    // If the CPU ran less cycles than it was supposed to, it encountered an invalid opcode and has to be terminated.
+    if (cyclesLeftToRun > 0) {
+        previousOpcode = cpu->getOpcode();
+        previousPC = cpu->getRegisterPC();
+        isRunning = false;
+        systemError = "Invalid opcode: " + std::to_string(previousOpcode) + " at PC: " + std::to_string(previousPC);
+    }
 }
 
 

@@ -11,127 +11,9 @@ CPU::CPU(Memory *memory, IOPorts *ioPorts, Display *display)
 }
 
 
-void CPU::resetCPU() {
-
-    registers.AF = 0x01B0;
-    registers.BC = 0x0013;
-    registers.DE = 0x00D8;
-    registers.HL = 0x014D;
-    registers.SP = 0xFFFE;
-    registers.PC = 0x0100; // PC would normally start at 0x0000, but assume the boot rom is not present.
-
-    /*memory->writeByte(0xFF05, 0x00); // TIMA
-    memory->writeByte(0xFF06, 0x00); // TMA
-    memory->writeByte(0xFF07, 0x00); // TAC
-    memory->writeByte(0xFF10, 0x80); // NR10
-    memory->writeByte(0xFF11, 0xBF); // NR11
-    memory->writeByte(0xFF14, 0xBF); // NR14
-    memory->writeByte(0xFF16, 0x3F); // NR21
-    memory->writeByte(0xFF17, 0x00); // NR22
-    memory->writeByte(0xFF19, 0xBF); // NR24
-    memory->writeByte(0xFF1A, 0x7F); // NR30
-    memory->writeByte(0xFF1B, 0xFF); // NR31
-    memory->writeByte(0xFF1C, 0x9F); // NR32
-    memory->writeByte(0xFF1E, 0xBF); // NR34
-    memory->writeByte(0xFF20, 0xFF); // NR41
-    memory->writeByte(0xFF21, 0x00); // NR42
-    memory->writeByte(0xFF22, 0x00); // NR43
-    memory->writeByte(0xFF23, 0xBF); // NR44
-    memory->writeByte(0xFF24, 0x77); // NR50
-    memory->writeByte(0xFF25, 0xF3); // NR51
-    memory->writeByte(0xFF26, 0xF1); // [$FF26] = $F1-GB, $F0-SGB ; NR52
-    memory->writeByte(0xFF40, 0x91); // LCD Control
-    memory->writeByte(0xFF41, 0x02); // LCD STAT
-    memory->writeByte(0xFF42, 0x00); // Scroll Y
-    memory->writeByte(0xFF43, 0x00); // Scroll X
-    memory->writeByte(0xFF44, 0x99); // LCD Y Coordinate
-    memory->writeByte(0xFF45, 0x00); // LCD Y Compare
-    memory->writeByte(0xFF47, 0xFC); // BG Palette
-    memory->writeByte(0xFF48, 0xFF); // Object Palette 0
-    memory->writeByte(0xFF49, 0xFF); // Object Palette 1
-    memory->writeByte(0xFF4A, 0x00); // Window Y
-    memory->writeByte(0xFF4B, 0x00); // Window X
-    memory->writeByte(0xFFFF, 0x00); // Interrupt Enable*/
-
-    interruptMasterEnableFlag = false;
-    interruptEnableDelayFlag = false;
-    stopped = false;
-    halted = false;
-}
-
-
-uint16_t CPU::getRegisterPC()
-{
-    return registers.PC;
-}
-
-
-void CPU::handleInterrupts()
-{
-    uint8_t enabledInterruptFlags = memory->readByte(0xFFFF);
-    uint8_t interruptRequestFlags = ioPorts->getInterruptRequestFlags();
-
-    if (interruptMasterEnableFlag == true) {
-        // V-Blank
-        if (((interruptRequestFlags & 0x01)) && ((enabledInterruptFlags & 0x01))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1E);
-            interruptMasterEnableFlag = false;
-            z80_push_reg16(&registers.PC);
-            registers.PC = 0x0040;
-            halted = false;
-        }
-        // LCD Status
-        else if (((interruptRequestFlags & 0x02)) && ((enabledInterruptFlags & 0x02))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1D);
-            interruptMasterEnableFlag = false;
-            z80_push_reg16(&registers.PC);
-            registers.PC = 0x0048;
-            halted = false;
-        }
-        // Timer
-        else if (((interruptRequestFlags & 0x04)) && ((enabledInterruptFlags & 0x04))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1B);
-            interruptMasterEnableFlag = false;
-            z80_push_reg16(&registers.PC);
-            registers.PC = 0x0050;
-            halted = false;
-        }
-        // Serial
-        else if (((interruptRequestFlags & 0x08)) && ((enabledInterruptFlags & 0x08))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x17);
-            interruptMasterEnableFlag = false;
-            z80_push_reg16(&registers.PC);
-            registers.PC = 0x0058;
-            halted = false;
-        }
-        // Joypad
-        else if (((interruptRequestFlags & 0x10)) && ((enabledInterruptFlags & 0x10))) {
-            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0F);
-            interruptMasterEnableFlag = false;
-            z80_push_reg16(&registers.PC);
-            registers.PC = 0x0060;
-            halted = false;
-            stopped = false;
-        }
-    }
-}
-
-
-uint8_t CPU::getOpcode()
-{
-    return opcode;
-}
-
-
 bool CPU::getInterruptMasterEnableFlag()
 {
     return interruptMasterEnableFlag;
-}
-
-
-void CPU::setInterruptMasterEnableFlag(bool state)
-{
-    interruptMasterEnableFlag = state;
 }
 
 
@@ -552,4 +434,122 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
     }
 
     return cyclesLeftToRun;
+}
+
+
+uint16_t CPU::getRegisterPC()
+{
+    return registers.PC;
+}
+
+
+uint8_t CPU::getOpcode()
+{
+    return opcode;
+}
+
+
+void CPU::handleInterrupts()
+{
+    uint8_t enabledInterruptFlags = memory->readByte(0xFFFF);
+    uint8_t interruptRequestFlags = ioPorts->getInterruptRequestFlags();
+
+    if (interruptMasterEnableFlag == true) {
+        // V-Blank
+        if (((interruptRequestFlags & 0x01)) && ((enabledInterruptFlags & 0x01))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1E);
+            interruptMasterEnableFlag = false;
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0040;
+            halted = false;
+        }
+        // LCD Status
+        else if (((interruptRequestFlags & 0x02)) && ((enabledInterruptFlags & 0x02))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1D);
+            interruptMasterEnableFlag = false;
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0048;
+            halted = false;
+        }
+        // Timer
+        else if (((interruptRequestFlags & 0x04)) && ((enabledInterruptFlags & 0x04))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1B);
+            interruptMasterEnableFlag = false;
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0050;
+            halted = false;
+        }
+        // Serial
+        else if (((interruptRequestFlags & 0x08)) && ((enabledInterruptFlags & 0x08))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x17);
+            interruptMasterEnableFlag = false;
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0058;
+            halted = false;
+        }
+        // Joypad
+        else if (((interruptRequestFlags & 0x10)) && ((enabledInterruptFlags & 0x10))) {
+            ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0F);
+            interruptMasterEnableFlag = false;
+            z80_push_reg16(&registers.PC);
+            registers.PC = 0x0060;
+            halted = false;
+            stopped = false;
+        }
+    }
+}
+
+
+void CPU::resetCPU() {
+
+    registers.AF = 0x01B0;
+    registers.BC = 0x0013;
+    registers.DE = 0x00D8;
+    registers.HL = 0x014D;
+    registers.SP = 0xFFFE;
+    registers.PC = 0x0100; // PC would normally start at 0x0000, but assume the boot rom is not present.
+
+    /*memory->writeByte(0xFF05, 0x00); // TIMA
+    memory->writeByte(0xFF06, 0x00); // TMA
+    memory->writeByte(0xFF07, 0x00); // TAC
+    memory->writeByte(0xFF10, 0x80); // NR10
+    memory->writeByte(0xFF11, 0xBF); // NR11
+    memory->writeByte(0xFF14, 0xBF); // NR14
+    memory->writeByte(0xFF16, 0x3F); // NR21
+    memory->writeByte(0xFF17, 0x00); // NR22
+    memory->writeByte(0xFF19, 0xBF); // NR24
+    memory->writeByte(0xFF1A, 0x7F); // NR30
+    memory->writeByte(0xFF1B, 0xFF); // NR31
+    memory->writeByte(0xFF1C, 0x9F); // NR32
+    memory->writeByte(0xFF1E, 0xBF); // NR34
+    memory->writeByte(0xFF20, 0xFF); // NR41
+    memory->writeByte(0xFF21, 0x00); // NR42
+    memory->writeByte(0xFF22, 0x00); // NR43
+    memory->writeByte(0xFF23, 0xBF); // NR44
+    memory->writeByte(0xFF24, 0x77); // NR50
+    memory->writeByte(0xFF25, 0xF3); // NR51
+    memory->writeByte(0xFF26, 0xF1); // [$FF26] = $F1-GB, $F0-SGB ; NR52
+    memory->writeByte(0xFF40, 0x91); // LCD Control
+    memory->writeByte(0xFF41, 0x02); // LCD STAT
+    memory->writeByte(0xFF42, 0x00); // Scroll Y
+    memory->writeByte(0xFF43, 0x00); // Scroll X
+    memory->writeByte(0xFF44, 0x99); // LCD Y Coordinate
+    memory->writeByte(0xFF45, 0x00); // LCD Y Compare
+    memory->writeByte(0xFF47, 0xFC); // BG Palette
+    memory->writeByte(0xFF48, 0xFF); // Object Palette 0
+    memory->writeByte(0xFF49, 0xFF); // Object Palette 1
+    memory->writeByte(0xFF4A, 0x00); // Window Y
+    memory->writeByte(0xFF4B, 0x00); // Window X
+    memory->writeByte(0xFFFF, 0x00); // Interrupt Enable*/
+
+    interruptMasterEnableFlag = false;
+    interruptEnableDelayFlag = false;
+    stopped = false;
+    halted = false;
+}
+
+
+void CPU::setInterruptMasterEnableFlag(bool state)
+{
+    interruptMasterEnableFlag = state;
 }

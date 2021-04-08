@@ -59,8 +59,8 @@ class IOPorts
         void setWindowX(uint8_t data);
         void setWindowY(uint8_t data);
 
-        void updateRegisters(uint16_t cyclesExecuted);
         void setControllerInputs(bool *buttonInputs);
+        void updateRegisters(uint16_t cyclesExecuted);
 
     private:
         void updateLcdStatMode(uint16_t cyclesExecuted);
@@ -93,11 +93,13 @@ class IOPorts
         uint8_t windowX;
         uint8_t windowY;
 
-        bool hBlankBeginFlag;
-        uint16_t internalCounter;
-        int32_t lcdStatModeCycles;
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
+        bool hBlankBeginFlag;
         bool timerCounterOverflow;
+
+        int32_t lcdStatModeCycles;
+
+        uint16_t internalCounter;
 };
 
 #endif // IOPORTS_H

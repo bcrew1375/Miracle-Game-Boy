@@ -217,12 +217,6 @@ void IOPorts::setController(uint8_t data)
 }
 
 
-void IOPorts::setControllerInputs(bool *buttonInputs)
-{
-    memcpy(&this->buttonInputs, buttonInputs, 8);
-}
-
-
 void IOPorts::setDivider()
 {
     internalCounter = 0;
@@ -440,6 +434,12 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
     // Clear the 2 least significant bits and write the new status.
     lcdStatus &= 0xFC;
     lcdStatus |= lcdStatMode;
+}
+
+
+void IOPorts::setControllerInputs(bool *buttonInputs)
+{
+    memcpy(&this->buttonInputs, buttonInputs, 8);
 }
 
 

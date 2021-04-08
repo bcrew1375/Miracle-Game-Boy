@@ -6,13 +6,10 @@
 
 
 Platform::Platform(int systemType) {
-    emulationUpdateTimer = new QTimer(this);
-    emulationUpdateTimer->setTimerType(Qt::PreciseTimer);
     speedRegulationTimer = new QElapsedTimer();
-    connect(emulationUpdateTimer, SIGNAL(timeout()), this, SLOT(executionLoop()));
 
     resetFPS();
-    platformRunning = false;
+
     frameLocked = true;
 
     errorMessage = "";
@@ -21,9 +18,20 @@ Platform::Platform(int systemType) {
 
 Platform::~Platform()
 {
-    delete emulationUpdateTimer;
     delete speedRegulationTimer;
     delete system;
+}
+
+
+uint16_t Platform::getFPS()
+{
+    return FPS;
+}
+
+
+uint32_t *Platform::getFrameBuffer()
+{
+    return system->getFrameBuffer();
 }
 
 
@@ -37,6 +45,11 @@ void Platform::pause() {
 }
 
 
+void Platform::resetFPS() {
+    FPS = 0;
+}
+
+
 void Platform::setSystemType() {
 
 }
@@ -46,8 +59,14 @@ void Platform::start() {
     nanoSecondsPerFrame = 1000000000 / system->getRefreshRate();
     milliSecondsPerFrame = (double)nanoSecondsPerFrame / 1000000;
     timeElapsed = 0;
+
     speedRegulationTimer->start();
+
     executionLoop();
+}
+
+
+void Platform::stop() {
 }
 
 
@@ -79,22 +98,6 @@ void Platform::executionLoop() {
         timeElapsed -= milliSecondsPerFrame;
     }
     FPS++;
-}
-
-
-void Platform::stop() {
-}
-
-
-uint16_t Platform::getFPS()
-{
-    return FPS;
-}
-
-
-uint32_t *Platform::getFrameBuffer()
-{
-    return system->getFrameBuffer();
 }
 
 
@@ -146,11 +149,6 @@ bool Platform::eventFilter(QObject *obj, QEvent *event)
     }
 
     return false;
-}
-
-
-void Platform::resetFPS() {
-    FPS = 0;
 }
 
 
