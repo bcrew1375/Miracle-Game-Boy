@@ -277,29 +277,38 @@ void CPU::z80_cpl()
 
 void CPU::z80_daa() // This instruction creates the packed binary-coded decimal representation of register A by using the H and N flags.
 {
-    if (registers.flagN == true)
+    uint16_t result;
+    result = registers.A;
+
+    // Check if flag N is on indicating the last operation was a subtraction.
+    if (registers.flagN)
     {
-        if (registers.flagC == true)
-            registers.A -= 0x60;
         if (registers.flagH == true)
-            registers.A -= 0x06;
+            result = (result - 0x06) & 0xFF;
+        if (registers.flagC == true)
+            result -= 0x60;
     }
+    // Otherwise, convert for an addition.
     else
     {
-        if ((registers.flagC == true) || (registers.A > 0x99))
-        {
-            registers.A += 0x60;
-            registers.flagC = true;
-        }
-        if ((registers.flagH == true) || ((registers.A & 0x0F) > 0x09))
-            registers.A += 0x06;
+        if (((result & 0xF) > 0x09) || (registers.flagH == true))
+            result += 0x06;
+        if ((result > 0x9F) || (registers.flagC == true))
+            result += 0x60;
     }
+
+    // Set the carry flag if the BCD value of the result is greater than 99.
+    if ((result & 0x100) == 0x100)
+        registers.flagC = true;
+
+    registers.A = (uint8_t)(result & 0xFF);
 
     if (registers.A == 0)
         registers.flagZ = true;
     else
         registers.flagZ = false;
 
+    // Flag H is turned off.
     registers.flagH = false;
 }
 

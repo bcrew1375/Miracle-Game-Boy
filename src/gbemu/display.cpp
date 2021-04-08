@@ -74,22 +74,20 @@ void Display::getBackgroundTileMap()
 // Collects one full line of tile bytes from the 32 x 32 map.
 void Display::getBackgroundWindowScanline()
 {
-    uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
-    uint8_t backgroundPalette = ioPorts->getBackgroundPalette();
-
     uint16_t tileDataPointerBase;
-    uint8_t tileNumber;
+    uint16_t windowTileMapOffset;
 
+    uint8_t backgroundPalette = ioPorts->getBackgroundPalette();
+    uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
     uint8_t scrollXOffset = ioPorts->getScrollX();
     uint8_t scrollYOffset = ioPorts->getScrollY();
 
+    uint8_t tileDataOffsetX = scrollXOffset % 8;
+    uint8_t tileDataOffsetY = (currentLcdYCoordinate + scrollYOffset) % 8;
+    uint8_t tileNumber;
     uint8_t tileNumberOffsetX = (uint8_t)(scrollXOffset / 8);
     uint8_t tileNumberOffsetY = (uint8_t)((currentLcdYCoordinate + scrollYOffset) / 8) % 32;
 
-    uint8_t tileDataOffsetX = scrollXOffset % 8;
-    uint8_t tileDataOffsetY = (currentLcdYCoordinate + scrollYOffset) % 8;
-
-    uint16_t windowTileMapOffset;
     uint8_t windowXOffset = ioPorts->getWindowX() - 7;
     uint8_t windowYOffset = ioPorts->getWindowY();
 
@@ -133,7 +131,10 @@ void Display::getBackgroundWindowScanline()
         if (currentLcdYCoordinate == 0)
             windowLineCounter = 0;
 
-        // The window has an additional enable bit. Check it before drawing the window.
+        // Disable window for testing.
+        //ioPorts->setLcdControl(ioPorts->getLcdControl() & 0xDF);
+
+        // The window has an additional enable bit. Check it and that the window is in the viewport before drawing.
         if ((ioPorts->getLcdControl() & 0x20) && ((currentLcdYCoordinate - windowYOffset) >= 0) && (windowXOffset < 160))
         {
             switch (ioPorts->getLcdControl() & 0x40)
@@ -181,22 +182,26 @@ void Display::getBackgroundWindowScanline()
 
 void Display::getSpriteScanline()
 {
-    uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
-    uint8_t sprites[10][4];
-    uint8_t spriteXPosition;
-    int16_t spriteYPosition;
-    uint8_t spriteHeight = 8 << ((ioPorts->getLcdControl() & 0x04) >> 2); // Get the global sprite tile height bit. 0 = 8, 1 = 16.
-    uint8_t spritePalette;
-    uint8_t spriteCount = 0;
-    uint8_t backgroundPaletteColorIndex0 = ioPorts->getBackgroundPalette() & 0x03; // Necessary for background/window prioritization.
     bool backgroundWindowPriority;
     bool spriteXFlip;
     bool spriteYFlip;
 
-    uint8_t tileNumber;
+    int16_t spriteXPosition;
+    int16_t spriteYPosition;
 
+    uint8_t backgroundPaletteColorIndex0 = ioPorts->getBackgroundPalette() & 0x03; // Necessary for background/window prioritization.
+    uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
+    uint8_t sprites[10][4];
+    uint8_t spriteCount = 0;
+    uint8_t spriteHeight = 8 << ((ioPorts->getLcdControl() & 0x04) >> 2); // Get the global sprite tile height bit. 0 = 8, 1 = 16.
+    uint8_t spritePalette;
     uint8_t tileDataOffsetX;
     uint8_t tileDataOffsetY;
+    uint8_t tileNumber;
+
+
+    // Disable sprites for testing.
+    //ioPorts->setLcdControl(ioPorts->getLcdControl() & 0xFD);
 
     // Only draw if sprites are enabled.
     if (ioPorts->getLcdControl() & 0x02)
@@ -265,8 +270,6 @@ void Display::getSpriteScanline()
                                 finalizedScanline[spriteX] = tileLine[tileDataOffsetX];
                         }
                     }
-                    //else
-                    //    finalizedScanline[spriteX] = rgbaPixelColors[3];
                     if (spriteXFlip)
                         tileDataOffsetX ^= 7;
                 }
