@@ -88,8 +88,8 @@ void Display::getBackgroundWindowScanline()
     uint8_t tileNumberOffsetX = (uint8_t)(scrollXOffset / 8);
     uint8_t tileNumberOffsetY = (uint8_t)((currentLcdYCoordinate + scrollYOffset) / 8) % 32;
 
-    uint8_t windowXOffset = ioPorts->getWindowX() - 7;
-    uint8_t windowYOffset = ioPorts->getWindowY();
+    int16_t windowXOffset = ioPorts->getWindowX() - 7;
+    int16_t windowYOffset = ioPorts->getWindowY();
 
     // Disable background and window for sprite testing.
     //ioPorts->setLcdControl(ioPorts->getLcdControl() & 0xFE);
@@ -135,7 +135,7 @@ void Display::getBackgroundWindowScanline()
         //ioPorts->setLcdControl(ioPorts->getLcdControl() & 0xDF);
 
         // The window has an additional enable bit. Check it and that the window is in the viewport before drawing.
-        if ((ioPorts->getLcdControl() & 0x20) && ((currentLcdYCoordinate - windowYOffset) >= 0) && (windowXOffset < 160))
+        if ((ioPorts->getLcdControl() & 0x20) && (currentLcdYCoordinate >= windowYOffset) && (windowXOffset < 160))
         {
             switch (ioPorts->getLcdControl() & 0x40)
             {
@@ -149,7 +149,7 @@ void Display::getBackgroundWindowScanline()
             tileDataOffsetY = windowLineCounter % 8;
 
 
-            for (uint8_t windowX = windowXOffset; windowX < 160; windowX += 8)
+            for (int16_t windowX = windowXOffset; windowX < 160; windowX += 8)
             {
                 tileNumber = videoRam[windowTileMapOffset + ((windowX - windowXOffset) / 8) + (tileNumberOffsetY * 32)];
 
@@ -165,7 +165,7 @@ void Display::getBackgroundWindowScanline()
                 for (uint8_t x = 0; x < 8; x++)
                 {
                     // Only draw pixels that are in the viewport.
-                    if ((x + windowX) < 160)
+                    if (((x + windowX) < 160) && ((x + windowX) >= 0))
                         finalizedScanline[x + windowX] = tileLine[x];
                 }
             }
