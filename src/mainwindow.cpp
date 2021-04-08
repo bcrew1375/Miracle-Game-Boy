@@ -45,7 +45,7 @@ void MainWindow::emulatedScreenUpdate()
 
 void MainWindow::on_actionExit_triggered() {
     if (platform != nullptr)
-        platform->stop();
+        platform->pause();
 
     QApplication::quit();
 }
@@ -81,7 +81,12 @@ void MainWindow::on_actionOpen_triggered() {
         settings.setValue("lastOpenFilePath", QFileInfo(romFilename).path());
 
         if (platform != nullptr)
+        {
+            platform->pause();
+            ui->actionRun->setDisabled(false);
+            openGlWidget->clearEmulatedScreen();
             delete platform;
+        }
 
         if (statusBarTimer != nullptr)
             delete statusBarTimer;
@@ -99,8 +104,10 @@ void MainWindow::on_actionOpen_triggered() {
 
 void MainWindow::on_actionPause_triggered()
 {
+    ui->actionRun->setDisabled(false);
+
     if (platform != nullptr)
-        platform->stop();
+        platform->pause();
 }
 
 

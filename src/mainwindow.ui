@@ -83,7 +83,6 @@
     </property>
     <addaction name="actionRun"/>
     <addaction name="actionPause"/>
-    <addaction name="actionStop"/>
    </widget>
    <widget class="QMenu" name="menuSystem">
     <property name="title">

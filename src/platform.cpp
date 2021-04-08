@@ -11,6 +11,7 @@ Platform::Platform(int systemType) {
     resetFPS();
 
     frameLocked = true;
+    isRunning = false;
 
     errorMessage = "";
 }
@@ -41,7 +42,7 @@ void Platform::loadRomFile(QByteArray bootROM, QByteArray romData) {
 
 
 void Platform::pause() {
-
+    isRunning = false;
 }
 
 
@@ -60,13 +61,11 @@ void Platform::start() {
     milliSecondsPerFrame = (double)nanoSecondsPerFrame / 1000000;
     timeElapsed = 0;
 
+    isRunning = true;
+
     speedRegulationTimer->start();
 
     executionLoop();
-}
-
-
-void Platform::stop() {
 }
 
 
@@ -82,12 +81,14 @@ void Platform::executionLoop() {
         timeDelay = 1;
 
     timeElapsed += speedRegulationTimer->restart();
-    QTimer::singleShot(timeDelay, Qt::PreciseTimer, this, SLOT(executionLoop()));
+
+    if (isRunning == true)
+        QTimer::singleShot(timeDelay, Qt::PreciseTimer, this, SLOT(executionLoop()));
 
     system->setControllerInputs(buttonInputs);
     system->executeCycles();
     if (system->getIsRunning() == false) {
-        this->stop();
+        this->pause();
         errorMessage = QString::fromStdString(system->getSystemError());
     }
     // Ensure the screen only updates at the system refresh rate

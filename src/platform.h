@@ -31,7 +31,6 @@ class Platform : public QWidget {
         void resetFPS();
         void setSystemType();
         void start();
-        void stop();
 
     protected:
         virtual bool eventFilter(QObject *obj, QEvent *event);
