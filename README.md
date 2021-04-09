@@ -1,3 +1,3 @@
 # Miracle-Game-Boy
 
-A complete rewrite of a Game Boy emulator written in C using C++/Qt.
+A Game Boy emulator with a focus on code clarity and accuracy.
