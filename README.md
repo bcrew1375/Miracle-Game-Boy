@@ -1,3 +1,3 @@
 # Miracle-Game-Boy
 
-A Game Boy emulator with a focus on code clarity.
+A Game Boy emulator written for Windows in C++/Qt with a focus on code clarity.
