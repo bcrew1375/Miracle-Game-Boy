@@ -31,10 +31,10 @@ Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPo
     // Load the first 32,768 bytes into the two 16 K ROM banks.
     std::memcpy(romBank0, &this->romData[0x0000], 0x4000);
 
-    mbcType = romBank0[0x0147];
+    externalHardwareType = romBank0[0x0147];
 
     // Determine if the cartridge uses extra hardware.
-    if (mbcType != 0x00)
+    if (externalHardwareType != 0x00)
         memoryBankController = new MemoryBankController(this->romData);
     else
     {
@@ -71,7 +71,7 @@ uint8_t Memory::readByte(uint16_t address)
         return romBank0[address];
     }
     else if (address < 0x8000) {
-        if (mbcType != 0x00)
+        if (externalHardwareType != 0x00)
             return memoryBankController->readExternalRam(address);
         else
             return romBank1[address - 0x4000];
@@ -81,7 +81,7 @@ uint8_t Memory::readByte(uint16_t address)
     }
     // External RAM should only be readable if the cartridge supports it. Otherwise, return an undefined value(0xFF).
     else if (address < 0xC000) {
-        if (mbcType != 0x00)
+        if (externalHardwareType != 0x00)
             memoryBankController->readExternalRam(address);
         else
             return 0xFF;
@@ -146,22 +146,22 @@ uint8_t Memory::readByte(uint16_t address)
 void Memory::writeByte(uint16_t address, uint8_t data)
 {
     if (address < 0x2000) {
-        if (mbcType != 0x00)
+        if (externalHardwareType != 0x00)
             memoryBankController->writeRamEnableRegister(data);
     }
 
     else if (address < 0x4000) {
-        if (mbcType != 0x00)
+        if (externalHardwareType != 0x00)
             memoryBankController->writeLowRomBankRegister(data);
     }
 
     else if (address < 0x6000) {
-        if (mbcType != 0x00)
+        if (externalHardwareType != 0x00)
             memoryBankController->writeHighRomBankRegister(data);
     }
 
     else if (address < 0x8000) {
-        if (mbcType != 0x00)
+        if (externalHardwareType != 0x00)
             memoryBankController->writeBankingModeRegister(data);
     }
 
@@ -175,7 +175,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 
     // External RAM should only be writable if the cartridge supports it. Otherwise, do nothing.
     else if (address < 0xC000) {
-        if (mbcType != 0x00)
+        if (externalHardwareType != 0x00)
             memoryBankController->writeExternalRam(address, data);
     }
 

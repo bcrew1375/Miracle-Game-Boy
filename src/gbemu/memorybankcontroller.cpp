@@ -18,6 +18,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
 
     switch (externalHardwareType)
     {
+        case 0x01:
         case 0x02:
         case 0x03:
         {

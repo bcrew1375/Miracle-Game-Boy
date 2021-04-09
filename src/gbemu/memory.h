@@ -28,7 +28,7 @@ class Memory
         uint8_t internalRamBank0[0x1000];
         uint8_t internalRamBank1[0x1000];
         uint8_t interruptEnableFlags;
-        uint8_t mbcType;
+        uint8_t externalHardwareType;
         uint8_t romBank0[0x4000];
         uint8_t romBank1[0x4000];
         uint8_t spriteAttributeTable[0xA0];

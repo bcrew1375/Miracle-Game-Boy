@@ -24,10 +24,8 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
     uint8_t *cbRegister;
 
 
-    //memory->writeByte(0x100, 0xE8);
-    //memory->writeByte(0x101, -20);
-
     while (cyclesLeftToRun > 0) {
+        // For debugging purposes. This is used to catch problems with code executing in restricted space.
         if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC >= 0xC000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
             int j = 0;
 
