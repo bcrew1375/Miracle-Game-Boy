@@ -72,7 +72,7 @@ uint8_t Memory::readByte(uint16_t address)
     }
     else if (address < 0x8000) {
         if (externalHardwareType != 0x00)
-            return memoryBankController->readExternalRam(address);
+            return memoryBankController->readRomBank1(address);
         else
             return romBank1[address - 0x4000];
     }

@@ -11,6 +11,7 @@ class MemoryBankController
         ~MemoryBankController();
 
         uint8_t readExternalRam(uint16_t address);
+        uint8_t readRomBank1(uint16_t address);
 
         void writeRamEnableRegister(uint8_t data);
         void writeLowRomBankRegister(uint8_t data);
@@ -27,6 +28,7 @@ class MemoryBankController
         uint8_t *romData;
         uint8_t externalHardwareType;
         uint8_t mbcType;
+        uint8_t numberOfRamBanks;
         uint8_t ramBankSelected;
         uint8_t ramBankSize;
         uint8_t ramBank[8][0x2000];

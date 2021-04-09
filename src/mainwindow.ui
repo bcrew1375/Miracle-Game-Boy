@@ -134,7 +134,7 @@
   </widget>
   <action name="actionOpen">
    <property name="text">
-    <string>Open GameBoy ROM</string>
+    <string>Open Game Boy ROM</string>
    </property>
   </action>
   <action name="actionExit">

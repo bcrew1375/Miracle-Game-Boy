@@ -8,7 +8,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     this->romData = romData;
     romBankSelected = 0x0001;
 
-    advancedRomBankingMode = false;
+    advancedRomBankingMode = true;
     hasExternalRam = false;
     externalHardwareType = romData[0x147];
     ramBankSelected = 0x00;
@@ -52,8 +52,26 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
 
     switch (ramBankSize)
     {
+        case 0x00:
+        case 0x01:
         case 0x02: hasRamBanks = false; break;
-        default: hasRamBanks = true; break;
+
+        case 0x03:
+        {
+            hasRamBanks = true;
+            numberOfRamBanks = 4;
+        } break;
+        case 0x04:
+        {
+            hasRamBanks = true;
+            numberOfRamBanks = 16;
+        } break;
+        case 0x05:
+        {
+            hasRamBanks = true;
+            numberOfRamBanks = 8;
+        } break;
+        default: hasRamBanks = false; break;
     }
 
     std::memcpy(romBank1, &this->romData[0x4000 * romBankSelected], 0x4000);
@@ -67,17 +85,16 @@ MemoryBankController::~MemoryBankController()
 
 uint8_t MemoryBankController::readExternalRam(uint16_t address)
 {
-    if ((address >= 0x4000) && (address < 0x8000))
-        return romBank1[address - 0x4000];
-    else if ((address >= 0xA000) && (address < 0xC000))
-    {
-        if (ramEnabled == true)
-            return ramBank[ramBankSelected][address - 0xA000];
-        else
-            return 0xFF;
-    }
+    if (ramEnabled == true)
+        return ramBank[ramBankSelected][address - 0xA000];
     else
         return 0xFF;
+}
+
+
+uint8_t MemoryBankController::readRomBank1(uint16_t address)
+{
+    return romBank1[address - 0x4000];
 }
 
 
@@ -114,6 +131,8 @@ void MemoryBankController::writeLowRomBankRegister(uint8_t data)
         case 3:
         {
             data &= 0x7F;
+            if (data == 0x00)
+                data = 0x01;
             romBankSelected &= 0x0080;
         } break;
         case 5:
@@ -139,7 +158,7 @@ void MemoryBankController::writeHighRomBankRegister(uint8_t data)
     }
     else
     {
-
+        romBankSelected = ((data & 0x03) << 5) | (romBankSelected & 0x1F);
     }
 }
 
