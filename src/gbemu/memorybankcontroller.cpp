@@ -6,18 +6,46 @@
 MemoryBankController::MemoryBankController(uint8_t *romData)
 {
     this->romData = romData;
-    romBankNumber = 0x01;
+    romBankSelected = 0x0001;
 
-    mbcType = romData[0x0147];
-    ramBankSize = romData[0x0149];
+    advancedRomBankingMode = false;
     hasExternalRam = false;
+    externalHardwareType = romData[0x147];
+    ramBankSelected = 0x00;
+    ramBankSize = romData[0x0149];
     ramEnabled = false;
-    ramBankSelected = 0;
+    romSize = romData[0x148];
 
-    switch (mbcType)
+    switch (externalHardwareType)
     {
         case 0x02:
-        case 0x03: hasExternalRam = true; break;
+        case 0x03:
+        {
+            mbcType = 1;
+            //hasExternalRam = true;
+        } break;
+        case 0x05:
+        case 0x06:
+        {
+            mbcType = 2;
+        } break;
+        case 0x0F:
+        case 0x10:
+        case 0x11:
+        case 0x12:
+        case 0x13:
+        {
+            mbcType = 3;
+        } break;
+        case 0x19:
+        case 0x1A:
+        case 0x1B:
+        case 0x1C:
+        case 0x1D:
+        case 0x1E:
+        {
+            mbcType = 5;
+        } break;
         default: hasExternalRam = false; break;
     }
 
@@ -27,7 +55,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
         default: hasRamBanks = true; break;
     }
 
-    std::memcpy(romBank1, &this->romData[0x4000 * romBankNumber], 0x4000);
+    std::memcpy(romBank1, &this->romData[0x4000 * romBankSelected], 0x4000);
 }
 
 
@@ -36,7 +64,7 @@ MemoryBankController::~MemoryBankController()
 }
 
 
-uint8_t MemoryBankController::readAddress(uint16_t address)
+uint8_t MemoryBankController::readExternalRam(uint16_t address)
 {
     if ((address >= 0x4000) && (address < 0x8000))
         return romBank1[address - 0x4000];
@@ -52,34 +80,77 @@ uint8_t MemoryBankController::readAddress(uint16_t address)
 }
 
 
-void MemoryBankController::writeAddress(uint16_t address, uint8_t data)
+void MemoryBankController::writeRamEnableRegister(uint8_t data)
 {
-    if (address < 0x2000)
-    {
-        if (data & 0xA)
-            ramEnabled = true;
-        else if (data == 0x00)
-            ramEnabled = false;
-    }
-    else if ((address >= 0x2000) && (address < 0x4000))
-    {
-        data &= 0x1F;
-        if (data == 0x00)
-            data = 0x01;
+    if (data & 0x0A)
+        ramEnabled = true;
+    else
+        ramEnabled = false;
+}
 
-        romBankNumber &= 0xE0;
-        romBankNumber |= data;
 
-        std::memcpy(romBank1, &romData[romBankNumber * 0x4000], 0x4000);
+void MemoryBankController::writeLowRomBankRegister(uint8_t data)
+{
+    // Make sure the register can only address the rom banks it has.
+
+    data &= (2 << romSize) - 1;
+    switch (mbcType)
+    {
+        case 1:
+        {
+            data &= 0x1F;
+            if (data == 0x00)
+                data = 0x01;
+            romBankSelected &= 0x00E0;
+        } break;
+        case 2:
+        {
+            data &= 0x0F;
+            if (data == 0x00)
+                data = 0x01;
+            romBankSelected &= 0x00F0;
+        } break;
+        case 3:
+        {
+            data &= 0x7F;
+            romBankSelected &= 0x0080;
+        } break;
+        case 5:
+        {
+            // Only for clarification that MBC5 uses all 8 bits.
+            data &= 0xFF;
+            romBankSelected &= 0xFF00;
+        } break;
     }
-    else if ((address >= 0x4000) && (address < 0x6000))
+
+    romBankSelected |= data;
+
+    std::memcpy(romBank1, &romData[romBankSelected * 0x4000], 0x4000);
+}
+
+
+void MemoryBankController::writeHighRomBankRegister(uint8_t data)
+{
+    if (advancedRomBankingMode == false)
     {
         if (hasRamBanks == true)
             ramBankSelected = data;
     }
-    else if ((address >= 0xA000) && (address < 0xC000))
+    else
     {
-        if (ramEnabled == true)
-            ramBank[ramBankSelected][address - 0xA000] = data;
+
     }
+}
+
+
+void MemoryBankController::writeBankingModeRegister(uint8_t data)
+{
+    advancedRomBankingMode = data & 0x01;
+}
+
+
+void MemoryBankController::writeExternalRam(uint16_t address, uint8_t data)
+{
+    if (ramEnabled == true)
+        ramBank[ramBankSelected][address - 0xA000] = data;
 }

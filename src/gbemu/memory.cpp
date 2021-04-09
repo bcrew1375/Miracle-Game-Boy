@@ -72,7 +72,7 @@ uint8_t Memory::readByte(uint16_t address)
     }
     else if (address < 0x8000) {
         if (mbcType != 0x00)
-            return memoryBankController->readAddress(address);
+            return memoryBankController->readExternalRam(address);
         else
             return romBank1[address - 0x4000];
     }
@@ -82,7 +82,7 @@ uint8_t Memory::readByte(uint16_t address)
     // External RAM should only be readable if the cartridge supports it. Otherwise, return an undefined value(0xFF).
     else if (address < 0xC000) {
         if (mbcType != 0x00)
-            memoryBankController->readAddress(address);
+            memoryBankController->readExternalRam(address);
         else
             return 0xFF;
     }
@@ -145,14 +145,24 @@ uint8_t Memory::readByte(uint16_t address)
 
 void Memory::writeByte(uint16_t address, uint8_t data)
 {
-    if (address < 0x4000) {
+    if (address < 0x2000) {
         if (mbcType != 0x00)
-            memoryBankController->writeAddress(address, data);
+            memoryBankController->writeRamEnableRegister(data);
+    }
+
+    else if (address < 0x4000) {
+        if (mbcType != 0x00)
+            memoryBankController->writeLowRomBankRegister(data);
+    }
+
+    else if (address < 0x6000) {
+        if (mbcType != 0x00)
+            memoryBankController->writeHighRomBankRegister(data);
     }
 
     else if (address < 0x8000) {
         if (mbcType != 0x00)
-            memoryBankController->writeAddress(address, data);
+            memoryBankController->writeBankingModeRegister(data);
     }
 
     else if (address < 0x9800) {
@@ -166,7 +176,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
     // External RAM should only be writable if the cartridge supports it. Otherwise, do nothing.
     else if (address < 0xC000) {
         if (mbcType != 0x00)
-            memoryBankController->writeAddress(address, data);
+            memoryBankController->writeExternalRam(address, data);
     }
 
     else if (address < 0xD000) {
