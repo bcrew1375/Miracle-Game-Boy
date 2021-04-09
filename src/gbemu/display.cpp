@@ -128,7 +128,7 @@ void Display::getBackgroundWindowScanline()
             }
         }
 
-        if (currentLcdYCoordinate == 0)
+        if ((currentLcdYCoordinate == 0) & ((ioPorts->getLcdStatus() & 0x03) != 0x01))
             windowLineCounter = 0;
 
         // Disable window for testing.
@@ -188,10 +188,10 @@ void Display::getSpriteScanline()
 
     int16_t spriteXPosition;
     int16_t spriteYPosition;
+    int16_t sprites[10][4];
 
     uint8_t backgroundPaletteColorIndex0 = ioPorts->getBackgroundPalette() & 0x03; // Necessary for background/window prioritization.
     uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
-    uint8_t sprites[10][4];
     uint8_t spriteCount = 0;
     uint8_t spriteHeight = 8 << ((ioPorts->getLcdControl() & 0x04) >> 2); // Get the global sprite tile height bit. 0 = 8, 1 = 16.
     uint8_t spritePalette;

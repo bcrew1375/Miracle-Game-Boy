@@ -373,7 +373,7 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
     lcdStatModeCycles -= cyclesExecuted;
     if (lcdStatModeCycles <= 0)
     {
-        if (lcdYCoordinate < 144)
+        if ((lcdYCoordinate < 144) && (lcdStatMode != 1))
         {
             switch (lcdStatMode)
             {
@@ -411,20 +411,37 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
         else if (lcdYCoordinate >= 144)
         {
             lcdYCoordinate++;
-            if (lcdYCoordinate == 154)
-            {
+            lcdStatModeCycles += 456;
+
+            // In reality, the coordinate should sit at 153 for approximately 4 clocks but assume it changes immediately.
+            if (lcdYCoordinate == 153)
                 lcdYCoordinate = 0;
-                lcdStatMode = 0x02;
-                lcdStatModeCycles += 80;
-            }
-            else
-                lcdStatModeCycles += 456;
         }
 
-        if ((lcdYCoordinate == lcdYCompare) && ((lcdStatMode == 0x02) || (lcdStatMode == 0x01))) {
+        else if (lcdYCoordinate == 0)
+        {
+            lcdStatMode = 0x02;
+            lcdStatModeCycles += 80;
+        }
+
+        if ((lcdYCoordinate == lcdYCompare) && ((lcdStatMode == 0x02) || (lcdStatMode == 0x01)))
+        {
+            if (lcdYCoordinate != 0)
+            {
             lcdStatus |= 0x04;
             if (lcdStatus & 0x40)
                 interruptRequestFlags |= 0x02;
+            }
+            else
+            {
+                // Since the LY coordinate can be 0 in both modes 1 and 2, make sure the compare is only triggered once.
+                if (lcdStatMode == 1)
+                {
+                    lcdStatus |= 0x04;
+                    if (lcdStatus & 0x40)
+                        interruptRequestFlags |= 0x02;
+                }
+            }
         }
         else
             lcdStatus &= 0xFB;
