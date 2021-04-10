@@ -225,7 +225,8 @@ void Display::getSpriteScanline()
                 break;
         }
 
-        for (int spriteNumber = 0; spriteNumber < spriteCount; spriteNumber++)
+        // Reverse indexing allows sprite earlier in the OAM to be drawn above later sprites.
+        for (int spriteNumber = (spriteCount - 1); spriteNumber >= 0; spriteNumber--)
         {
             spriteYPosition = sprites[spriteNumber][0];
             spriteXPosition = sprites[spriteNumber][1];
