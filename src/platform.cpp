@@ -1,11 +1,17 @@
 #include <iostream>
 
 #include <QApplication>
+#include <QByteArray>
+#include <QDir>
+#include <QFile>
+#include <QKeyEvent>
+#include <QTimer>
 
 #include "platform.h"
 
 
 Platform::Platform(int systemType) {
+    saveDirectory = "/saves/";
     speedRegulationTimer = new QElapsedTimer();
 
     resetFPS();
@@ -36,13 +42,41 @@ uint32_t *Platform::getFrameBuffer()
 }
 
 
-void Platform::loadRomFile(QByteArray bootROM, QByteArray romData) {
-    system = new System((uint8_t *)bootROM.constData(), (uint8_t *)romData.constData(), romData.size());
+void Platform::loadRomFile(QString romFilename, QByteArray bootROM, QByteArray romData) {
+    QByteArray saveData;
+    saveFilename = saveDirectory;
+
+    // Remove the directory and extension from the filename.
+    saveFilename.append(romFilename.right(romFilename.length() - (romFilename.lastIndexOf("/") + 1)));
+    saveFilename.chop(saveFilename.length() - saveFilename.lastIndexOf("."));
+
+    saveFilename.append(".sav");
+
+    saveData = readSaveRamFromFile();
+
+    system = new System((uint8_t *)bootROM.constData(), (uint8_t *)romData.constData(), romData.size(), (uint8_t *)saveData.constData(), saveData.length());
 }
 
 
 void Platform::pause() {
     isRunning = false;
+}
+
+
+QByteArray Platform::readSaveRamFromFile()
+{
+    QDir *directory = new QDir();
+    QFile *saveFile = new QFile(directory->currentPath().append(saveFilename));
+    QByteArray saveData;
+
+    if (saveFile->exists())
+    {
+        saveFile->open(QIODevice::ReadOnly);
+        saveData = saveFile->readAll();
+        saveFile->close();
+    }
+
+    return saveData;
 }
 
 
@@ -69,6 +103,28 @@ void Platform::start() {
 }
 
 
+void Platform::writeSaveRamToFile()
+{
+    QDir *directory = new QDir();
+    QFile *saveFile = new QFile(directory->currentPath().append(saveFilename));
+    QByteArray saveData;
+    qint32 saveDataSize;
+
+    saveDataSize = system->getSaveDataSize();
+    saveData = saveData.fromRawData((const char *)system->getSaveData(), saveDataSize);
+
+    if (!directory->exists(directory->currentPath() + saveDirectory))
+        directory->mkdir(directory->currentPath() + saveDirectory);
+
+    if (saveData != nullptr)
+    {
+        saveFile->open(QIODevice::WriteOnly);
+        saveFile->write(saveData, saveDataSize);
+        saveFile->close();
+    }
+}
+
+
 void Platform::executionLoop() {
     qint8 timeDelay;
 
@@ -82,6 +138,7 @@ void Platform::executionLoop() {
 
     timeElapsed += speedRegulationTimer->restart();
 
+    // This should be moved to the end of the function to prevent possible premature recursion.
     if (isRunning == true)
         QTimer::singleShot(timeDelay, Qt::PreciseTimer, this, SLOT(executionLoop()));
 
@@ -98,6 +155,7 @@ void Platform::executionLoop() {
         emit screenUpdate();
         timeElapsed -= milliSecondsPerFrame;
     }
+    writeSaveRamToFile();
     FPS++;
 }
 
@@ -124,10 +182,6 @@ bool Platform::eventFilter(QObject *obj, QEvent *event)
         case Qt::Key_Tab: frameLocked ^= true; break;
         default: return false; break;
         }
-
-        //system->setControllerInputs(buttonInputs);
-
-        //memset(buttonInputs, false, 8);
     }
     else if (event->type() == QEvent::KeyRelease)
     {
@@ -145,8 +199,6 @@ bool Platform::eventFilter(QObject *obj, QEvent *event)
         case Qt::Key_X: keyEvent->accept(); buttonInputs[7] = false; break;
         default: return false; break;
         }
-
-        //system->setControllerInputs(buttonInputs);
     }
 
     return false;

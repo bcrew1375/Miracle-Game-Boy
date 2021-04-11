@@ -95,19 +95,6 @@ void OpenGlWidget::paintGL() {
 }
 
 
-void OpenGlWidget::updateTexture(uint8_t *textureData) {
-    /*emulatedScreenTexture->destroy();
-    emulatedScreenTexture->create();
-    emulatedScreenTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
-    emulatedScreenTexture->setSize(EMULATED_SCREEN_RESOLUTION_X, EMULATED_SCREEN_RESOLUTION_Y);
-    emulatedScreenTexture->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
-    emulatedScreenTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
-    emulatedScreenTexture->allocateStorage();
-
-    emulatedScreenTexture->setData(QOpenGLTexture::PixelFormat::RGBA, QOpenGLTexture::PixelType::UInt32_RGBA8, textureData);*/
-}
-
-
 void OpenGlWidget::clearEmulatedScreen() {
     uint32_t clearBuffer[EMULATED_SCREEN_RESOLUTION_X * EMULATED_SCREEN_RESOLUTION_Y];
 
@@ -117,7 +104,6 @@ void OpenGlWidget::clearEmulatedScreen() {
 
 
 void OpenGlWidget::updateEmulatedScreen(uint32_t *screenData) {
-    //QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
     emulatedScreenTexture->destroy();
     emulatedScreenTexture->create();
     emulatedScreenTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
@@ -126,14 +112,6 @@ void OpenGlWidget::updateEmulatedScreen(uint32_t *screenData) {
     emulatedScreenTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
     emulatedScreenTexture->allocateStorage();
 
-    /*uint32_t textureData[23040];
-    memset(textureData, 0, 23040);
-    textureData[0] = 0xFFFFFF00;
-    textureData[23039] = 0x00FFFFFF;*/
-    //emulatedScreenTexture->bind();
-
     emulatedScreenTexture->setData(QOpenGLTexture::PixelFormat::RGBA, QOpenGLTexture::PixelType::UInt32_RGBA8, screenData);
-    //emulatedScreenTexture->setData(QOpenGLTexture::PixelFormat::RGBA, QOpenGLTexture::PixelType::UInt32_RGBA8, textureData);
-    //emulatedScreenTexture->release();
     this->update();
 }

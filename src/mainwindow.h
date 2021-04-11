@@ -1,10 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QBuffer>
-#include <QSettings>
 #include <QMainWindow>
 
 #include "platform.h"

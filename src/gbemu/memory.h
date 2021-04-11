@@ -13,10 +13,13 @@ class Memory
         Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts);
         ~Memory();
 
+        uint32_t getSaveRamSize();
+        uint8_t *getSaveRamPointer();
         uint8_t *getSpriteAttributeTablePointer();
         uint8_t *getVideoRamPointer();
         uint8_t readByte(uint16_t address);
 
+        void setSaveRam(uint8_t *saveRam, uint32_t saveSize);
         void writeByte(uint16_t address, uint8_t data);
 
     private:

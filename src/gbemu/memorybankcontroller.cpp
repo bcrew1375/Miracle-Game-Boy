@@ -9,43 +9,59 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     romBankSelected = 0x0001;
 
     advancedRomBankingMode = true;
+    hasBatteryBackup = false;
     hasExternalRam = false;
     externalHardwareType = romData[0x147];
+    numberOfRamBanks = 0;
     ramBankSelected = 0x00;
     ramBankSize = romData[0x0149];
     ramEnabled = false;
     romSize = romData[0x148];
 
+    memset(ramBank, 0, 0x40000);
+    memset(romBank1, 0, 0x4000);
+
     switch (externalHardwareType)
     {
         case 0x01:
-        case 0x02:
+        case 0x02: mbcType = 1; break;
         case 0x03:
         {
             mbcType = 1;
-            //hasExternalRam = true;
+            hasBatteryBackup = true;
         } break;
-        case 0x05:
+        case 0x05: mbcType = 2; break;
         case 0x06:
         {
             mbcType = 2;
+            hasBatteryBackup = true;
         } break;
         case 0x0F:
         case 0x10:
+        {
+            mbcType = 3;
+            hasBatteryBackup = true;
+        } break;
         case 0x11:
-        case 0x12:
+        case 0x12: mbcType = 3; break;
         case 0x13:
         {
             mbcType = 3;
+            hasBatteryBackup = true;
         } break;
         case 0x19:
-        case 0x1A:
+        case 0x1A: mbcType = 5; break;
         case 0x1B:
+        {
+            mbcType = 5;
+            hasBatteryBackup = true;
+        } break;
         case 0x1C:
-        case 0x1D:
+        case 0x1D: mbcType = 5; break;
         case 0x1E:
         {
             mbcType = 5;
+            hasBatteryBackup = true;
         } break;
         default: hasExternalRam = false; break;
     }
@@ -53,25 +69,28 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     switch (ramBankSize)
     {
         case 0x00:
-        case 0x01:
-        case 0x02: hasRamBanks = false; break;
-
+        case 0x01: hasSwitchableRamBanks = false; break;
+        case 0x02:
+        {
+            hasSwitchableRamBanks = false;
+            numberOfRamBanks = 1;
+        } break;
         case 0x03:
         {
-            hasRamBanks = true;
+            hasSwitchableRamBanks = true;
             numberOfRamBanks = 4;
         } break;
         case 0x04:
         {
-            hasRamBanks = true;
+            hasSwitchableRamBanks = true;
             numberOfRamBanks = 16;
         } break;
         case 0x05:
         {
-            hasRamBanks = true;
+            hasSwitchableRamBanks = true;
             numberOfRamBanks = 8;
         } break;
-        default: hasRamBanks = false; break;
+        default: hasSwitchableRamBanks = false; break;
     }
 
     std::memcpy(romBank1, &this->romData[0x4000 * romBankSelected], 0x4000);
@@ -83,10 +102,25 @@ MemoryBankController::~MemoryBankController()
 }
 
 
+uint8_t *MemoryBankController::getRamBankPointer()
+{
+    if (hasBatteryBackup == true)
+        return ramBank;
+    else
+        return nullptr;
+}
+
+
+uint8_t MemoryBankController::getNumberOfRamBanks()
+{
+    return numberOfRamBanks;
+}
+
+
 uint8_t MemoryBankController::readExternalRam(uint16_t address)
 {
     if (ramEnabled == true)
-        return ramBank[ramBankSelected][address - 0xA000];
+        return ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)];
     else
         return 0xFF;
 }
@@ -95,6 +129,12 @@ uint8_t MemoryBankController::readExternalRam(uint16_t address)
 uint8_t MemoryBankController::readRomBank1(uint16_t address)
 {
     return romBank1[address - 0x4000];
+}
+
+
+void MemoryBankController::setRamBanks(uint8_t *ramData, uint32_t ramSize)
+{
+    memcpy(ramBank, ramData, ramSize);
 }
 
 
@@ -153,7 +193,7 @@ void MemoryBankController::writeHighRomBankRegister(uint8_t data)
 {
     if (advancedRomBankingMode == false)
     {
-        if (hasRamBanks == true)
+        if (hasSwitchableRamBanks == true)
             ramBankSelected = data;
     }
     else
@@ -172,5 +212,5 @@ void MemoryBankController::writeBankingModeRegister(uint8_t data)
 void MemoryBankController::writeExternalRam(uint16_t address, uint8_t data)
 {
     if (ramEnabled == true)
-        ramBank[ramBankSelected][address - 0xA000] = data;
+        ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)] = data;
 }
