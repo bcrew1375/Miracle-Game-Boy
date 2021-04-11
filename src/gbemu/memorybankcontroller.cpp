@@ -11,10 +11,14 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     advancedRomBankingMode = true;
     hasExternalRam = false;
     externalHardwareType = romData[0x147];
+    numberOfRamBanks = 1;
     ramBankSelected = 0x00;
     ramBankSize = romData[0x0149];
     ramEnabled = false;
     romSize = romData[0x148];
+
+    memset(ramBank, 0, 0x40000);
+    memset(romBank1, 0, 0x4000);
 
     switch (externalHardwareType)
     {
@@ -83,10 +87,22 @@ MemoryBankController::~MemoryBankController()
 }
 
 
+uint8_t *MemoryBankController::getRamBankPointer()
+{
+    return ramBank;
+}
+
+
+uint8_t MemoryBankController::getNumberOfRamBanks()
+{
+    return numberOfRamBanks;
+}
+
+
 uint8_t MemoryBankController::readExternalRam(uint16_t address)
 {
     if (ramEnabled == true)
-        return ramBank[ramBankSelected][address - 0xA000];
+        return ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)];
     else
         return 0xFF;
 }
@@ -95,6 +111,12 @@ uint8_t MemoryBankController::readExternalRam(uint16_t address)
 uint8_t MemoryBankController::readRomBank1(uint16_t address)
 {
     return romBank1[address - 0x4000];
+}
+
+
+void MemoryBankController::setRamBanks(uint8_t *ramData, uint32_t ramSize)
+{
+    memcpy(ramBank, ramData, ramSize);
 }
 
 
@@ -172,5 +194,5 @@ void MemoryBankController::writeBankingModeRegister(uint8_t data)
 void MemoryBankController::writeExternalRam(uint16_t address, uint8_t data)
 {
     if (ramEnabled == true)
-        ramBank[ramBankSelected][address - 0xA000] = data;
+        ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)] = data;
 }

@@ -53,6 +53,18 @@ Memory::~Memory()
 }
 
 
+uint32_t Memory::getSaveRamSize()
+{
+    return memoryBankController->getNumberOfRamBanks() * 8192;
+}
+
+
+uint8_t *Memory::getSaveRamPointer()
+{
+    return memoryBankController->getRamBankPointer();
+}
+
+
 uint8_t *Memory::getSpriteAttributeTablePointer()
 {
     return spriteAttributeTable;
@@ -140,6 +152,11 @@ uint8_t Memory::readByte(uint16_t address)
     }
     else
         return 0xFF;
+}
+
+void Memory::setSaveRam(uint8_t *saveRam, uint32_t saveSize)
+{
+    memoryBankController->setRamBanks(saveRam, saveSize);
 }
 
 

@@ -13,7 +13,7 @@
 class System
 {
     public:
-        System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes);
+        System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, uint8_t *saveData, uint32_t saveDataSize);
         ~System();
 
         bool getIsRunning();
@@ -23,6 +23,9 @@ class System
         std::string getSystemError();
 
         uint32_t *getFrameBuffer();
+        uint32_t getSaveDataSize();
+
+        uint8_t *getSaveData();
 
         void executeCycles();
         void setControllerInputs(bool *buttonInputs);

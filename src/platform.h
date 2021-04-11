@@ -1,13 +1,10 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#include <QWidget>
-#include <QByteArray>
-#include <QTimer>
-#include <QElapsedTimer>
-#include <QKeyEvent>
-
 #include <stdint.h>
+
+#include <QWidget>
+#include <QElapsedTimer>
 
 #include "gbemu/system.h"
 
@@ -18,6 +15,7 @@ class Platform : public QWidget {
         Platform(int systemType);
         ~Platform();
 
+        QByteArray readSaveRamFromFile();
         QString getErrorMessage();
 
         bool isPaused;
@@ -26,11 +24,12 @@ class Platform : public QWidget {
         uint16_t getFPS();
         uint32_t *getFrameBuffer();
 
-        void loadRomFile(QByteArray bootROM, QByteArray romData);
+        void loadRomFile(QString romFilename, QByteArray bootROM, QByteArray romData);
         void pause();
         void resetFPS();
         void setSystemType();
         void start();
+        void writeSaveRamToFile();
 
     protected:
         virtual bool eventFilter(QObject *obj, QEvent *event);
@@ -38,11 +37,13 @@ class Platform : public QWidget {
     private:
         QElapsedTimer *speedRegulationTimer;
         QString errorMessage;
+        QString saveFilename;
+        QString saveDirectory;
 
         System *system;
 
-        bool frameLocked;
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
+        bool frameLocked;
 
         double  milliSecondsPerFrame;
 

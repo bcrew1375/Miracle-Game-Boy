@@ -3,7 +3,7 @@
 #include "system.h"
 
 
-System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes)
+System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, uint8_t *saveData, uint32_t saveDataSize)
 {
     ioPorts = new IOPorts();
     memory = new Memory(bootROM, romData, romSizeInBytes, ioPorts);
@@ -13,6 +13,8 @@ System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes)
     clockSpeed = 4194304;
     displayRefreshRate = 59.73; //59.72750056960583;
     cyclesPerFrame = (uint32_t)(clockSpeed / displayRefreshRate);
+
+    memory->setSaveRam(saveData, saveDataSize);
 
     isRunning = true;
 }
@@ -47,6 +49,18 @@ std::string System::getSystemError()
 uint32_t *System::getFrameBuffer()
 {
     return display->getFrameBuffer();
+}
+
+
+uint32_t System::getSaveDataSize()
+{
+    return memory->getSaveRamSize();
+}
+
+
+uint8_t *System::getSaveData()
+{
+    return memory->getSaveRamPointer();
 }
 
 

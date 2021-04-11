@@ -1,4 +1,8 @@
+#include <QBuffer>
+#include <QFileDialog>
 #include <QInputDialog>
+#include <QMessageBox>
+#include <QSettings>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -6,8 +10,8 @@
 #include "platformsmap.h"
 
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
-
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
+{
     ui->setupUi(this);
 
     openGlWidget = new OpenGlWidget(this); //(QOpenGLWidget *) this->ui->centralwidget;
@@ -18,7 +22,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 }
 
 
-MainWindow::~MainWindow() {
+MainWindow::~MainWindow()
+{
     delete ui;
     delete openGlWidget;
     delete platform;
@@ -26,11 +31,14 @@ MainWindow::~MainWindow() {
 }
 
 
-void MainWindow::statusBarUpdate() {
-    if (platform->getErrorMessage() == "") {
+void MainWindow::statusBarUpdate()
+{
+    if (platform->getErrorMessage() == "")
+    {
         ui->statusbar->showMessage("FPS: " + QString::number(platform->getFPS()));
     }
-    else {
+    else
+    {
         ui->statusbar->showMessage("The platform encountered an error of: " + platform->getErrorMessage());
     }
     platform->resetFPS();
@@ -43,7 +51,8 @@ void MainWindow::emulatedScreenUpdate()
 }
 
 
-void MainWindow::on_actionExit_triggered() {
+void MainWindow::on_actionExit_triggered()
+{
     if (platform != nullptr)
         platform->pause();
 
@@ -57,7 +66,8 @@ void MainWindow::on_actionInput_triggered()
 }
 
 
-void MainWindow::on_actionOpen_triggered() {
+void MainWindow::on_actionOpen_triggered()
+{
     QString romFileFilter;
     QString romFilename;
 
@@ -72,12 +82,14 @@ void MainWindow::on_actionOpen_triggered() {
     romHandle.open(QIODevice::ReadOnly);
     bootROM.open(QIODevice::ReadOnly);
 
-    if (romFilename != "" && !romHandle.isReadable()) {
+    if (romFilename != "" && !romHandle.isReadable())
+    {
         QMessageBox message;
         message.setText("Could not open file: " + romFilename);
         message.exec();
     }
-    else if (romHandle.isReadable()) {
+    else if (romHandle.isReadable())
+    {
         settings.setValue("lastOpenFilePath", QFileInfo(romFilename).path());
 
         if (platform != nullptr)
@@ -94,7 +106,7 @@ void MainWindow::on_actionOpen_triggered() {
         platform = new Platform(availablePlatforms[ui->SystemType->checkedAction()->text().toStdString()]);
         statusBarTimer = new QTimer(this);
 
-        platform->loadRomFile(bootROM.readAll(), romHandle.readAll());
+        platform->loadRomFile(romFilename, bootROM.readAll(), romHandle.readAll());
 
         connect(platform, SIGNAL(screenUpdate()), this, SLOT(emulatedScreenUpdate()));
         connect(statusBarTimer, SIGNAL(timeout()), this, SLOT(statusBarUpdate()));
@@ -113,7 +125,8 @@ void MainWindow::on_actionPause_triggered()
 
 void MainWindow::on_actionRun_triggered()
 {
-    if (platform != nullptr) {
+    if (platform != nullptr)
+    {
         ui->actionRun->setDisabled(true);
         statusBarTimer->start(1000);
         installEventFilter(platform);
