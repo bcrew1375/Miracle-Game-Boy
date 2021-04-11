@@ -55,13 +55,19 @@ Memory::~Memory()
 
 uint32_t Memory::getSaveRamSize()
 {
-    return memoryBankController->getNumberOfRamBanks() * 8192;
+    if (memoryBankController != nullptr)
+        return memoryBankController->getNumberOfRamBanks() * 8192;
+    else
+        return 0;
 }
 
 
 uint8_t *Memory::getSaveRamPointer()
 {
-    return memoryBankController->getRamBankPointer();
+    if (memoryBankController != nullptr)
+        return memoryBankController->getRamBankPointer();
+    else
+        return nullptr;
 }
 
 

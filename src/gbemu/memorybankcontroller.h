@@ -23,9 +23,10 @@ class MemoryBankController
         void writeExternalRam(uint16_t address, uint8_t data);
 
     private:
+        bool hasBatteryBackup;
         bool hasExternalRam;
         bool advancedRomBankingMode;
-        bool hasRamBanks;
+        bool hasSwitchableRamBanks;
         bool ramEnabled;
 
         uint8_t *romData;

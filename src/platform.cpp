@@ -116,9 +116,12 @@ void Platform::writeSaveRamToFile()
     if (!directory->exists(directory->currentPath() + saveDirectory))
         directory->mkdir(directory->currentPath() + saveDirectory);
 
-    saveFile->open(QIODevice::WriteOnly);
-    saveFile->write(saveData, saveDataSize);
-    saveFile->close();
+    if (saveData != nullptr)
+    {
+        saveFile->open(QIODevice::WriteOnly);
+        saveFile->write(saveData, saveDataSize);
+        saveFile->close();
+    }
 }
 
 
