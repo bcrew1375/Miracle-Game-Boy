@@ -18,7 +18,7 @@ Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPo
 
     memset(romBank0, 0xFF, 0x4000);
     memset(romBank1, 0xFF, 0x4000);
-    memset(videoRam, 0xFF, 0x2000);
+    memset(videoRam, 0x00, 0x2000);
     //memset(externalRam, 0xFF, 0x1000);
     memset(internalRamBank0, 0xFF, 0x1000);
     memset(internalRamBank1, 0xFF, 0x1000);
