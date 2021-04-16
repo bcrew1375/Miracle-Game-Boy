@@ -44,6 +44,7 @@ class Platform : public QWidget {
 
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
         bool frameLocked;
+        bool saveEnabled;
 
         double  milliSecondsPerFrame;
 

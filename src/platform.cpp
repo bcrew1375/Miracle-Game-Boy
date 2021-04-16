@@ -18,6 +18,7 @@ Platform::Platform(int systemType) {
 
     frameLocked = true;
     isRunning = false;
+    saveEnabled = true;
 
     errorMessage = "";
 }
@@ -72,8 +73,15 @@ QByteArray Platform::readSaveRamFromFile()
     if (saveFile->exists())
     {
         saveFile->open(QIODevice::ReadOnly);
+        if (!saveFile->isReadable())
+            saveEnabled = false;
         saveData = saveFile->readAll();
+        if (saveData.length() != saveFile->size())
+            saveEnabled = false;
         saveFile->close();
+
+        if (saveEnabled == false)
+            errorMessage = "There was an error reading the save data. Saving will be disabled to prevent accidental erasure.";
     }
 
     return saveData;
@@ -155,7 +163,8 @@ void Platform::executionLoop() {
         emit screenUpdate();
         timeElapsed -= milliSecondsPerFrame;
     }
-    writeSaveRamToFile();
+    if (saveEnabled == true)
+        writeSaveRamToFile();
     FPS++;
 }
 
