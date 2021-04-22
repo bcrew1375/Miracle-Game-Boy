@@ -250,6 +250,7 @@ void IOPorts::setLcdControl(uint8_t data)
 void IOPorts::setLcdStatus(uint8_t data)
 {
     // Make sure the current mode isn't overwritten.
+    lcdStatus &= 0x03;
     lcdStatus |= (data & 0xFC);
 }
 
@@ -438,7 +439,7 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
             }
             else
             {
-                // Since the LY coordinate can be 0 in both modes 1 and 2, make sure the compare is only triggered once.
+                // Since the LY coordinate can be 0 in both modes 1 and 2, make sure the compare is only made during mode 1.
                 if (lcdStatMode == 1)
                 {
                     lcdStatus |= 0x04;
