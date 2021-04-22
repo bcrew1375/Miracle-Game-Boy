@@ -393,6 +393,7 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
             if (lcdStatMode == 0x02)
             {
                 lcdYCoordinate++;
+                // Request OAM interrupt if enabled.
                 if (lcdStatus & 0x20)
                     interruptRequestFlags |= 0x02;
             }
@@ -420,7 +421,10 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
 
         else if (lcdYCoordinate == 0)
         {
+            // Request OAM interrupt on the transition from V-Blank if enabled.
             lcdStatMode = 0x02;
+            if (lcdStatus & 0x20)
+                interruptRequestFlags |= 0x02;
             lcdStatModeCycles += 80;
         }
 
@@ -428,9 +432,9 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
         {
             if (lcdYCoordinate != 0)
             {
-            lcdStatus |= 0x04;
-            if (lcdStatus & 0x40)
-                interruptRequestFlags |= 0x02;
+                lcdStatus |= 0x04;
+                if (lcdStatus & 0x40)
+                    interruptRequestFlags |= 0x02;
             }
             else
             {
