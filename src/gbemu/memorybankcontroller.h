@@ -36,7 +36,7 @@ class MemoryBankController
         uint8_t ramBankSelected;
         uint8_t ramBankSize;
         uint8_t ramBank[0x40000];
-        uint8_t romBank1[0x4000];
+        uint8_t *romBank1;
         uint16_t romBankSelected;
         uint8_t romSize;
 };
