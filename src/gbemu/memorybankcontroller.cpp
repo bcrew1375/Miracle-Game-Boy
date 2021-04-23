@@ -8,7 +8,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     this->romData = romData;
     romBankSelected = 0x0001;
 
-    advancedRomBankingMode = true;
+    advancedRomBankingMode = false;
     hasBatteryBackup = false;
     hasExternalRam = false;
     externalHardwareType = romData[0x147];
@@ -19,7 +19,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     romSize = romData[0x148];
 
     memset(ramBank, 0, 0x40000);
-    memset(romBank1, 0, 0x4000);
+    //memset(romBank1, 0, 0x4000);
 
     switch (externalHardwareType)
     {
@@ -93,7 +93,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
         default: hasSwitchableRamBanks = false; break;
     }
 
-    std::memcpy(romBank1, &this->romData[0x4000 * romBankSelected], 0x4000);
+    romBank1 = &this->romData[0x4000 * romBankSelected];
 }
 
 
@@ -185,7 +185,9 @@ void MemoryBankController::writeLowRomBankRegister(uint8_t data)
 
     romBankSelected |= data;
 
-    std::memcpy(romBank1, &romData[romBankSelected * 0x4000], 0x4000);
+    if (romBankSelected > 0x1F)
+        int i = 0;
+    romBank1 = &romData[romBankSelected * 0x4000];
 }
 
 
