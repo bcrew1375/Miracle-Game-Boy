@@ -250,7 +250,7 @@ void IOPorts::setLcdControl(uint8_t data)
 void IOPorts::setLcdStatus(uint8_t data)
 {
     // Make sure the current mode isn't overwritten.
-    lcdStatus &= 0x03;
+    lcdStatus &= 0x83;
     lcdStatus |= (data & 0xFC);
 }
 
@@ -417,7 +417,13 @@ void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
 
             // In reality, the coordinate should sit at 153 for approximately 4 clocks but assume it changes immediately.
             if (lcdYCoordinate == 153)
+            {
+                if (lcdYCoordinate == lcdYCompare)
+                    if (lcdStatus & 0x40)
+                        interruptRequestFlags |= 0x02;
+
                 lcdYCoordinate = 0;
+            }
         }
 
         else if (lcdYCoordinate == 0)
