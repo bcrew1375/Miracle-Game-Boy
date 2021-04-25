@@ -286,7 +286,9 @@ void IOPorts::setScrollY(uint8_t data)
 
 void IOPorts::setSerialTransferControl(uint8_t data)
 {
-    serialTransferControl = data;
+    // Assume there is no other connected Game Boy.
+    serialTransferControl = data & 0x01;
+    interruptRequestFlags |= 0x08;
 }
 
 
