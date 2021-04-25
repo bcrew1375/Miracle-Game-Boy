@@ -18,7 +18,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     ramEnabled = false;
     romSizeCode = romData[0x148];
 
-    memset(ramBank, 0x00, 0x40000);
+    memset(ramBank, 0xFF, 0x40000);
 
     switch (externalHardwareTypeCode)
     {
