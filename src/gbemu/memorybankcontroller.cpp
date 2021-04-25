@@ -11,23 +11,23 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
     advancedRomBankingMode = false;
     hasBatteryBackup = false;
     hasExternalRam = false;
-    externalHardwareType = romData[0x147];
+    externalHardwareTypeCode = romData[0x147];
     numberOfRamBanks = 0;
     ramBankSelected = 0x00;
-    ramBankSize = romData[0x0149];
+    ramBankSizeCode = romData[0x0149];
     ramEnabled = false;
-    romSize = romData[0x148];
+    romSizeCode = romData[0x148];
 
-    memset(ramBank, 0, 0x40000);
-    //memset(romBank1, 0, 0x4000);
+    memset(ramBank, 0x00, 0x40000);
 
-    switch (externalHardwareType)
+    switch (externalHardwareTypeCode)
     {
         case 0x01:
         case 0x02: mbcType = 1; break;
         case 0x03:
         {
             mbcType = 1;
+            hasExternalRam = true;
             hasBatteryBackup = true;
         } break;
         case 0x05: mbcType = 2; break;
@@ -40,6 +40,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
         case 0x10:
         {
             mbcType = 3;
+            hasExternalRam = true;
             hasBatteryBackup = true;
         } break;
         case 0x11:
@@ -47,6 +48,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
         case 0x13:
         {
             mbcType = 3;
+            hasExternalRam = true;
             hasBatteryBackup = true;
         } break;
         case 0x19:
@@ -54,6 +56,7 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
         case 0x1B:
         {
             mbcType = 5;
+            hasExternalRam = true;
             hasBatteryBackup = true;
         } break;
         case 0x1C:
@@ -61,12 +64,13 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
         case 0x1E:
         {
             mbcType = 5;
+            hasExternalRam = true;
             hasBatteryBackup = true;
         } break;
         default: hasExternalRam = false; break;
     }
 
-    switch (ramBankSize)
+    switch (ramBankSizeCode)
     {
         case 0x00:
         case 0x01: hasSwitchableRamBanks = false; break;
@@ -119,7 +123,7 @@ uint8_t MemoryBankController::getNumberOfRamBanks()
 
 uint8_t MemoryBankController::readExternalRam(uint16_t address)
 {
-    if (ramEnabled == true)
+    if ((hasExternalRam == true) && (ramEnabled == true))
         return ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)];
     else
         return 0xFF;
@@ -149,9 +153,9 @@ void MemoryBankController::writeRamEnableRegister(uint8_t data)
 
 void MemoryBankController::writeLowRomBankRegister(uint8_t data)
 {
-    // Make sure the register can only address the rom banks it has.
+    // Make sure the register can only address the ROM banks the ROM has.
 
-    data &= (2 << romSize) - 1;
+    data &= (2 << romSizeCode) - 1;
     switch (mbcType)
     {
         case 1:
@@ -185,23 +189,38 @@ void MemoryBankController::writeLowRomBankRegister(uint8_t data)
 
     romBankSelected |= data;
 
-    if (romBankSelected > 0x1F)
-        int i = 0;
     romBank1 = &romData[romBankSelected * 0x4000];
 }
 
 
 void MemoryBankController::writeHighRomBankRegister(uint8_t data)
 {
-    if (advancedRomBankingMode == false)
+    switch (mbcType)
     {
-        if (hasSwitchableRamBanks == true)
-            ramBankSelected = data;
+        case 1:
+        {
+            data &= 0x03;
+
+            if (advancedRomBankingMode == false)
+            {
+                romBankSelected = ((data & 0x03) << 5) | (romBankSelected & 0x1F);
+                romBankSelected &= (2 << romSizeCode) - 1;
+            }
+            else
+            {
+                if (hasSwitchableRamBanks == true)
+                    ramBankSelected = data;
+            }
+        } break;
+        case 3:
+        {
+            data &= 0x03;
+
+            if (hasSwitchableRamBanks == true)
+                ramBankSelected = data;
+        } break;
     }
-    else
-    {
-        romBankSelected = ((data & 0x03) << 5) | (romBankSelected & 0x1F);
-    }
+
 }
 
 
@@ -213,6 +232,6 @@ void MemoryBankController::writeBankingModeRegister(uint8_t data)
 
 void MemoryBankController::writeExternalRam(uint16_t address, uint8_t data)
 {
-    if (ramEnabled == true)
+    if ((hasExternalRam == true) && (ramEnabled == true))
         ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)] = data;
 }
