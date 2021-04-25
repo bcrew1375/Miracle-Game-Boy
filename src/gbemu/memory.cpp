@@ -259,6 +259,10 @@ void Memory::writeByte(uint16_t address, uint8_t data)
 
     else if (address < 0xFFFF) {
         highRam[address - 0xFF80] = data;
+
+        // For debugging purposes
+        if (highRam[0x0B] == 0xFF)
+            int j = 0;
     }
 
     else if (address == 0xFFFF) {

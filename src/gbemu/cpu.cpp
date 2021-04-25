@@ -28,10 +28,18 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
         // For debugging purposes. This is used to catch problems with code executing in restricted space.
         if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC >= 0xC000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
             int j = 0;
+        if ((registers.SP < 0xA000) || ((registers.SP >= 0xFEA0) && (registers.SP < 0xFF80)) || (registers.SP == 0xFFFF))
+            int j = 0;
+        if (registers.PC == 0xFFA0)
+            int j = 0;
 
-        //if ((registers.BC == 0xd19) && (registers.DE == 0xc5c0))
-        if (registers.PC == 0x1163)
-            int i = 0;
+        if ((registers.PC == 0x6E8) && (registers.HL == 0xA201))
+            int j = 0;
+        //if (registers.PC == 0x64C8)
+        //    int j = 0;
+
+        //if ((registers.PC >= 0x686) && (registers.PC <= 0x68A) && (registers.BC == 0x0003))
+        //    int j = 0;
 
         opcode = memory->readByte(registers.PC);
         clockCyclesExecuted = clockCyclesTable[opcode];

@@ -30,15 +30,15 @@ class MemoryBankController
         bool ramEnabled;
 
         uint8_t *romData;
-        uint8_t externalHardwareType;
+        uint8_t externalHardwareTypeCode;
         uint8_t mbcType;
         uint8_t numberOfRamBanks;
         uint8_t ramBankSelected;
-        uint8_t ramBankSize;
+        uint8_t ramBankSizeCode;
         uint8_t ramBank[0x40000];
         uint8_t *romBank1;
         uint16_t romBankSelected;
-        uint8_t romSize;
+        uint8_t romSizeCode;
 };
 
 #endif // MEMORYBANKCONTROLLER_H
