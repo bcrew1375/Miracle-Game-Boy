@@ -110,6 +110,11 @@ void MainWindow::on_actionOpen_triggered()
 
         connect(platform, SIGNAL(screenUpdate()), this, SLOT(emulatedScreenUpdate()));
         connect(statusBarTimer, SIGNAL(timeout()), this, SLOT(statusBarUpdate()));
+
+        ui->actionRun->setDisabled(true);
+        statusBarTimer->start(1000);
+        installEventFilter(platform);
+        platform->start();
     }
 }
 
