@@ -30,16 +30,6 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
             int j = 0;
         if ((registers.SP < 0xA000) || ((registers.SP >= 0xFEA0) && (registers.SP < 0xFF80)) || (registers.SP == 0xFFFF))
             int j = 0;
-        if (registers.PC == 0xFFA0)
-            int j = 0;
-
-        if ((registers.PC == 0x6E8) && (registers.HL == 0xA201))
-            int j = 0;
-        //if (registers.PC == 0x64C8)
-        //    int j = 0;
-
-        //if ((registers.PC >= 0x686) && (registers.PC <= 0x68A) && (registers.BC == 0x0003))
-        //    int j = 0;
 
         opcode = memory->readByte(registers.PC);
         clockCyclesExecuted = clockCyclesTable[opcode];
@@ -423,11 +413,6 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
             }
         }
 
-        ioPorts->updateRegisters(clockCyclesExecuted);
-
-        if (ioPorts->getHBlankBeginFlag() == true)
-            display->createScanline();
-
         // Accounts for the one instruction delay before enabling interrupts.
         if (interruptEnableDelayFlag == false)
             handleInterrupts();
@@ -436,6 +421,11 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
             interruptEnableDelayFlag = false;
             interruptMasterEnableFlag = true;
         }
+
+        ioPorts->updateRegisters(clockCyclesExecuted);
+
+        if (ioPorts->getHBlankBeginFlag() == true)
+            display->createScanline();
 
         if (clockCyclesExecuted > 0)
             cyclesLeftToRun -= clockCyclesExecuted;
