@@ -95,12 +95,12 @@ class IOPorts
 
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
         bool hBlankBeginFlag;
-        bool lcdYCoordinateChangeFlag;
         bool timerCounterOverflow;
 
         int32_t previousCycleState;
         uint32_t cyclesPerFrame;
         uint16_t internalCounter;
+        uint16_t lcdStatModeCycles;
 };
 
 #endif // IOPORTS_H

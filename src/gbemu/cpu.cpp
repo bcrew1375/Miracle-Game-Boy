@@ -1,6 +1,9 @@
 #include "cpu.h"
 #include "cycletables.h"
 
+#include <fstream>
+
+std::ofstream myfile;
 
 CPU::CPU(Memory *memory, IOPorts *ioPorts, Display *display)
 {
@@ -8,6 +11,8 @@ CPU::CPU(Memory *memory, IOPorts *ioPorts, Display *display)
     this->ioPorts = ioPorts;
     this->display = display;
     this->resetCPU();
+
+    myfile.open("log.txt");
 }
 
 
@@ -31,11 +36,17 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
         if ((registers.SP < 0xA000) || ((registers.SP >= 0xFEA0) && (registers.SP < 0xFF80)) || (registers.SP == 0xFFFF))
             int j = 0;
 
-        if (registers.PC == 0xD820)
-            int j = 0;
-
         opcode = memory->readByte(registers.PC);
         clockCyclesExecuted = clockCyclesTable[opcode];
+
+
+
+        uint16_t y = ioPorts->getLcdYCoordinate();
+
+        //myfile << "PC: " << std::hex << registers.PC << "\t" << "SP: " << std::hex << registers.SP << "\t" << "AF: " << std::hex << registers.AF << "\t" <<
+        //          "BC: " << std::hex << registers.BC << "\t" << "DE: " << std::hex << registers.DE << "\t" << "HL: " << std::hex << registers.HL << "\t" <<
+        //          "LY: " << std::hex << y << "\n";
+
 
 
         if (stopped == false) {

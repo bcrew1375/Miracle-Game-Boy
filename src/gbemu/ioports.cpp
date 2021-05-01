@@ -14,7 +14,7 @@ IOPorts::IOPorts(uint32_t cyclesPerFrame)
     timerCounter = 0x00;
     timerModulo = 0x00;
     lcdControl = 0x91;
-    lcdStatus = 0x82;
+    lcdStatus = 0x85;
     lcdYCoordinate = 0x00;
     lcdYCompare = 0x00;
     scrollY = 0;
@@ -30,7 +30,8 @@ IOPorts::IOPorts(uint32_t cyclesPerFrame)
     previousCycleState = cyclesPerFrame;
     internalCounter = 0xABCC;
     hBlankBeginFlag = false;
-    lcdYCoordinateChangeFlag = false;
+    //lcdYCoordinateChangeFlag = false;
+    lcdStatModeCycles = 248;
     timerCounterOverflow = false;
 }
 
@@ -246,6 +247,7 @@ void IOPorts::setLcdControl(uint8_t data)
     if (!(lcdControl & 0x80)) {
         lcdStatus &= 0xFC;
         lcdYCoordinate = 0;
+        lcdStatModeCycles = 0;
     }
 }
 
@@ -379,18 +381,28 @@ void IOPorts::setWindowY(uint8_t data)
 void IOPorts::updateLcdStatMode(int32_t cyclesLeftToRun)
 {
     bool lcdStatModeChange = false;
+    bool lcdYCoordinateChangeFlag = false;
 
-    uint16_t lcdStatModeCycles = (cyclesPerFrame - cyclesLeftToRun) % 456;
-    uint8_t previousLcdYCoordinate;
+    uint16_t previousLcdStatModeCycles;
+    uint8_t cyclesRan = previousCycleState - cyclesLeftToRun;
     uint8_t lcdStatMode = lcdStatus & 0x03;
 
-    previousLcdYCoordinate = (cyclesPerFrame - previousCycleState) / 456;
-    lcdYCoordinate = (cyclesPerFrame - cyclesLeftToRun) / 456;
+    previousLcdStatModeCycles = lcdStatModeCycles;
 
-    if (previousLcdYCoordinate != lcdYCoordinate)
-        lcdYCoordinateChangeFlag = true;
-    else
-        lcdYCoordinateChangeFlag = false;
+    lcdStatModeCycles += cyclesRan;
+    lcdStatModeCycles %= 456;
+
+
+    // Indicates the cycles have wrapped. Mode 2 begins and LY increments.
+    if (previousLcdStatModeCycles > lcdStatModeCycles)
+    {
+        // LY coordinate 0 should be present for stat mode 1 and 2.
+        if ((lcdYCoordinate > 0) || ((lcdYCoordinate == 0) && (lcdStatMode != 1)))
+        {
+            lcdYCoordinate++;
+            lcdYCoordinateChangeFlag = true;
+        }
+    }
 
     if (lcdYCoordinate < 144)
     {
@@ -410,7 +422,7 @@ void IOPorts::updateLcdStatMode(int32_t cyclesLeftToRun)
                 lcdStatModeChange = true;
             }
         }
-        else if ((lcdStatModeCycles >= 248) && (lcdStatModeCycles < 456))
+        else if (lcdStatModeCycles >= 248)
         {
             if (lcdStatMode != 0)
             {
@@ -438,18 +450,18 @@ void IOPorts::updateLcdStatMode(int32_t cyclesLeftToRun)
         }
     }
 
-    else if ((lcdYCoordinateChangeFlag == true) && (lcdYCoordinate == 144))
+    if ((lcdYCoordinateChangeFlag == true) && (lcdYCoordinate == 144))
     {
         // V-Blank begins.
-        lcdStatMode = 0x01;
+        lcdStatMode = 1;
         interruptRequestFlags |= 0x01;
         if (lcdStatus & 0x10)
             interruptRequestFlags |= 0x02;
     }
 
-    else if (lcdYCoordinate >= 153)
+    else if (lcdYCoordinate == 153)
     {
-        if ((lcdYCoordinate == lcdYCompare) && (lcdYCoordinateChangeFlag == true))
+        if (lcdYCoordinate == lcdYCompare)
             if (lcdStatus & 0x40)
                 interruptRequestFlags |= 0x02;
 
