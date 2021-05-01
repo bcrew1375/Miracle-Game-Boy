@@ -3,19 +3,18 @@
 #include "ioports.h"
 
 
-IOPorts::IOPorts()
+IOPorts::IOPorts(uint32_t cyclesPerFrame)
 {
     // All values assume bootrom has just finished executing.
     backgroundPalette = 0xFC;
     controller = 0xCF;
     dmaTransfer = 0x00;
-    interruptRequestFlags = 0xE0;
+    interruptRequestFlags = 0xE1;
     timerControl = 0xF8;
     timerCounter = 0x00;
     timerModulo = 0x00;
     lcdControl = 0x91;
     lcdStatus = 0x82;
-    lcdStatModeCycles = 80;
     lcdYCoordinate = 0x00;
     lcdYCompare = 0x00;
     scrollY = 0;
@@ -27,8 +26,12 @@ IOPorts::IOPorts()
     spritePalette0 = 0x00;
     spritePalette1 = 0x00;
 
-    internalCounter = 0xAC00;
+    this->cyclesPerFrame = cyclesPerFrame;
+    previousCycleState = cyclesPerFrame;
+    internalCounter = 0xABCC;
     hBlankBeginFlag = false;
+    lcdYCoordinateChangeFlag = false;
+    timerCounterOverflow = false;
 }
 
 
@@ -243,7 +246,6 @@ void IOPorts::setLcdControl(uint8_t data)
     if (!(lcdControl & 0x80)) {
         lcdStatus &= 0xFC;
         lcdYCoordinate = 0;
-        lcdStatModeCycles = 80;
     }
 }
 
@@ -374,97 +376,108 @@ void IOPorts::setWindowY(uint8_t data)
 }
 
 
-void IOPorts::updateLcdStatMode(uint16_t cyclesExecuted)
+void IOPorts::updateLcdStatMode(int32_t cyclesLeftToRun)
 {
+    bool lcdStatModeChange = false;
+
+    uint16_t lcdStatModeCycles = (cyclesPerFrame - cyclesLeftToRun) % 456;
+    uint8_t previousLcdYCoordinate;
     uint8_t lcdStatMode = lcdStatus & 0x03;
 
-    lcdStatModeCycles -= cyclesExecuted;
-    if (lcdStatModeCycles <= 0)
+    previousLcdYCoordinate = (cyclesPerFrame - previousCycleState) / 456;
+    lcdYCoordinate = (cyclesPerFrame - cyclesLeftToRun) / 456;
+
+    if (previousLcdYCoordinate != lcdYCoordinate)
+        lcdYCoordinateChangeFlag = true;
+    else
+        lcdYCoordinateChangeFlag = false;
+
+    if (lcdYCoordinate < 144)
     {
-        if ((lcdYCoordinate < 144) && (lcdStatMode != 1))
+        if (lcdStatModeCycles < 80)
         {
-            switch (lcdStatMode)
+            if (lcdStatMode != 2)
             {
-            case 0: lcdStatMode = 2; lcdStatModeCycles += 80; break;
-            case 2: lcdStatMode = 3; lcdStatModeCycles += 168; break; // Variable between 168 and 291 depending on sprite count. Assume 168 for now.
-            case 3: lcdStatMode = 0; lcdStatModeCycles += 208; break; // Variable between 85 and 208 depending on time taken for mode 3.
-            }
-
-            if (lcdStatMode == 0x00)
-            {
-                // Request H-Blank interrupt if enabled.
-                if (lcdStatus & 0x08)
-                    interruptRequestFlags |= 0x02;
-                hBlankBeginFlag = true;
-            }
-
-            if (lcdStatMode == 0x02)
-            {
-                lcdYCoordinate++;
-                // Request OAM interrupt if enabled.
-                if (lcdStatus & 0x20)
-                    interruptRequestFlags |= 0x02;
-            }
-
-            if (lcdYCoordinate == 144)
-            {
-                // V-Blank begins.
-                lcdStatMode = 0x01;
-                lcdStatModeCycles += 376; // Account for the 80 cycles added from switching to mode 2 by not adding them here.
-                interruptRequestFlags |= 0x01;
-                if (lcdStatus & 0x10)
-                    interruptRequestFlags |= 0x02;
+                lcdStatMode = 2;
+                lcdStatModeChange = true;
             }
         }
-
-        else if (lcdYCoordinate >= 144)
+        else if ((lcdStatModeCycles >= 80) && (lcdStatModeCycles < 248))
         {
-            lcdYCoordinate++;
-            lcdStatModeCycles += 456;
-
-            // In reality, the coordinate should sit at 153 for approximately 4 clocks but assume it changes immediately.
-            if (lcdYCoordinate == 153)
+            if (lcdStatMode != 3)
             {
-                if (lcdYCoordinate == lcdYCompare)
-                    if (lcdStatus & 0x40)
-                        interruptRequestFlags |= 0x02;
-
-                lcdYCoordinate = 0;
+                lcdStatMode = 3;
+                lcdStatModeChange = true;
             }
         }
-
-        else if (lcdYCoordinate == 0)
+        else if ((lcdStatModeCycles >= 248) && (lcdStatModeCycles < 456))
         {
-            // Request OAM interrupt on the transition from V-Blank if enabled.
-            lcdStatMode = 0x02;
+            if (lcdStatMode != 0)
+            {
+                lcdStatMode = 0;
+                lcdStatModeChange = true;
+            }
+        }
+    }
+
+    if ((lcdStatModeChange == true) && (lcdYCoordinate < 144))
+    {
+        if (lcdStatMode == 0)
+        {
+            // Request H-Blank interrupt if enabled.
+            if (lcdStatus & 0x08)
+                interruptRequestFlags |= 0x02;
+            hBlankBeginFlag = true;
+        }
+
+        if (lcdStatMode == 2)
+        {
+            // Request OAM interrupt if enabled.
             if (lcdStatus & 0x20)
                 interruptRequestFlags |= 0x02;
-            lcdStatModeCycles += 80;
         }
+    }
 
-        if ((lcdYCoordinate == lcdYCompare) && ((lcdStatMode == 0x02) || (lcdStatMode == 0x01)))
+    else if ((lcdYCoordinateChangeFlag == true) && (lcdYCoordinate == 144))
+    {
+        // V-Blank begins.
+        lcdStatMode = 0x01;
+        interruptRequestFlags |= 0x01;
+        if (lcdStatus & 0x10)
+            interruptRequestFlags |= 0x02;
+    }
+
+    else if (lcdYCoordinate >= 153)
+    {
+        if ((lcdYCoordinate == lcdYCompare) && (lcdYCoordinateChangeFlag == true))
+            if (lcdStatus & 0x40)
+                interruptRequestFlags |= 0x02;
+
+        // In reality, the coordinate should sit at 153 for approximately 4 clocks but assume it changes immediately.
+        lcdYCoordinate = 0;
+    }
+
+    if ((lcdYCoordinateChangeFlag == true) && (lcdYCoordinate == lcdYCompare))
+    {
+        if (lcdYCoordinate != 0)
         {
-            if (lcdYCoordinate != 0)
+            lcdStatus |= 0x04;
+            if (lcdStatus & 0x40)
+                interruptRequestFlags |= 0x02;
+        }
+        else
+        {
+            // Since the LY coordinate can be 0 in both modes 1 and 2, make sure the compare is only made during mode 1.
+            if (lcdStatMode == 1)
             {
                 lcdStatus |= 0x04;
                 if (lcdStatus & 0x40)
                     interruptRequestFlags |= 0x02;
             }
-            else
-            {
-                // Since the LY coordinate can be 0 in both modes 1 and 2, make sure the compare is only made during mode 1.
-                if (lcdStatMode == 1)
-                {
-                    lcdStatus |= 0x04;
-                    if (lcdStatus & 0x40)
-                        interruptRequestFlags |= 0x02;
-                }
-            }
         }
-        else
-            lcdStatus &= 0xFB;
     }
-
+    else
+        lcdStatus &= 0xFB;
 
     // Clear the 2 least significant bits and write the new status.
     lcdStatus &= 0xFC;
@@ -478,17 +491,17 @@ void IOPorts::setControllerInputs(bool *buttonInputs)
 }
 
 
-void IOPorts::updateRegisters(uint16_t cyclesExecuted)
+void IOPorts::updateRegisters(int32_t cyclesLeftToRun)
 {
     uint16_t previousCounter;
 
     // Don't update LCD-related registers if the LCD isn't turned on.
     if (lcdControl & 0x80)
-        updateLcdStatMode(cyclesExecuted);
+        updateLcdStatMode(cyclesLeftToRun);
 
     // This is an internal counter that is incremented for every clock cycle and determines the DIV and TIMA registers.
     previousCounter = internalCounter;
-    internalCounter += cyclesExecuted;
+    internalCounter += (previousCycleState - cyclesLeftToRun);
 
     if (timerControl & 0x04)
     {
@@ -517,16 +530,17 @@ void IOPorts::updateRegisters(uint16_t cyclesExecuted)
             {
                 // An exception for cases where the timer counter can increase twice on one instruction
                 // due to the timer's speed at this setting.
-                for (int i = 0; i < cyclesExecuted; i += 4)
+                for (int i = 0; i < (previousCycleState - cyclesLeftToRun); i += 4)
                 {
                     // Check for an overflow from bit 3.
-                    if (((previousCounter + i) & 0x0008) && (!(internalCounter & 0x0008)))
+                    if ((previousCounter & 0x0008) && (!((previousCounter + 4) & 0x0008)))
                     {
                         timerCounter++;
 
                         if (timerCounter == 0)
                             timerCounterOverflow = true;
                     }
+                    previousCounter += 4;
                 }
             } break;
             case 0x02:
@@ -553,4 +567,9 @@ void IOPorts::updateRegisters(uint16_t cyclesExecuted)
             } break;
         }
     }
+
+    if (cyclesLeftToRun < 0)
+        previousCycleState = cyclesPerFrame + cyclesLeftToRun;
+    else
+        previousCycleState = cyclesLeftToRun;
 }

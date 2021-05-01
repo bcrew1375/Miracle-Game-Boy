@@ -7,7 +7,7 @@
 class IOPorts
 {
     public:
-        IOPorts();
+        IOPorts(uint32_t cyclesPerFrame);
 
         bool getHBlankBeginFlag();
 
@@ -60,10 +60,10 @@ class IOPorts
         void setWindowY(uint8_t data);
 
         void setControllerInputs(bool *buttonInputs);
-        void updateRegisters(uint16_t cyclesExecuted);
+        void updateRegisters(int32_t cyclesExecuted);
 
     private:
-        void updateLcdStatMode(uint16_t cyclesExecuted);
+        void updateLcdStatMode(int32_t cyclesLeftToRun);
 
         uint8_t backgroundPalette;
         uint8_t controller;
@@ -95,10 +95,11 @@ class IOPorts
 
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
         bool hBlankBeginFlag;
+        bool lcdYCoordinateChangeFlag;
         bool timerCounterOverflow;
 
-        int32_t lcdStatModeCycles;
-
+        int32_t previousCycleState;
+        uint32_t cyclesPerFrame;
         uint16_t internalCounter;
 };
 

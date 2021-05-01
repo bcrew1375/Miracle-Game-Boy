@@ -5,14 +5,14 @@
 
 System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, uint8_t *saveData, uint32_t saveDataSize)
 {
-    ioPorts = new IOPorts();
+    clockSpeed = 4194304;
+    displayRefreshRate = 59.7275;
+    cyclesPerFrame = (uint32_t)(clockSpeed / displayRefreshRate);
+
+    ioPorts = new IOPorts(cyclesPerFrame);
     memory = new Memory(bootROM, romData, romSizeInBytes, ioPorts);
     display = new Display(memory->getVideoRamPointer(), memory->getSpriteAttributeTablePointer(), ioPorts);
     cpu = new CPU(memory, ioPorts, display);
-
-    clockSpeed = 4194304;
-    displayRefreshRate = 59.73; //59.72750056960583;
-    cyclesPerFrame = (uint32_t)(clockSpeed / displayRefreshRate);
 
     memory->setSaveRam(saveData, saveDataSize);
 
