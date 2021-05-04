@@ -378,18 +378,17 @@ void IOPorts::setWindowY(uint8_t data)
 }
 
 
-void IOPorts::updateLcdStatMode(int32_t cyclesLeftToRun)
+void IOPorts::updateLcdStatMode(uint32_t cyclesExecuted)
 {
     bool lcdStatModeChange = false;
     bool lcdYCoordinateChangeFlag = false;
 
     uint16_t previousLcdStatModeCycles;
-    uint8_t cyclesRan = previousCycleState - cyclesLeftToRun;
     uint8_t lcdStatMode = lcdStatus & 0x03;
 
     previousLcdStatModeCycles = lcdStatModeCycles;
 
-    lcdStatModeCycles += cyclesRan;
+    lcdStatModeCycles += cyclesExecuted;
     lcdStatModeCycles %= 456;
 
 
@@ -402,9 +401,11 @@ void IOPorts::updateLcdStatMode(int32_t cyclesLeftToRun)
             lcdYCoordinate++;
             lcdYCoordinateChangeFlag = true;
         }
+        else
+            lcdStatMode = 2;
     }
 
-    if (lcdYCoordinate < 144)
+    if ((lcdYCoordinate < 144) && (lcdStatMode != 1))
     {
         if (lcdStatModeCycles < 80)
         {
@@ -503,17 +504,21 @@ void IOPorts::setControllerInputs(bool *buttonInputs)
 }
 
 
-void IOPorts::updateRegisters(int32_t cyclesLeftToRun)
+void IOPorts::updateRegisters(int32_t cyclesExecuted)
 {
     uint16_t previousCounter;
 
+    currentCycleState = previousCycleState - cyclesExecuted;
+    if (currentCycleState <= 0)
+        currentCycleState += cyclesPerFrame;
+
     // Don't update LCD-related registers if the LCD isn't turned on.
     if (lcdControl & 0x80)
-        updateLcdStatMode(cyclesLeftToRun);
+        updateLcdStatMode(cyclesExecuted);
 
     // This is an internal counter that is incremented for every clock cycle and determines the DIV and TIMA registers.
     previousCounter = internalCounter;
-    internalCounter += (previousCycleState - cyclesLeftToRun);
+    internalCounter += cyclesExecuted;
 
     if (timerControl & 0x04)
     {
@@ -542,7 +547,7 @@ void IOPorts::updateRegisters(int32_t cyclesLeftToRun)
             {
                 // An exception for cases where the timer counter can increase twice on one instruction
                 // due to the timer's speed at this setting.
-                for (int i = 0; i < (previousCycleState - cyclesLeftToRun); i += 4)
+                for (int i = 0; i < cyclesExecuted; i += 4)
                 {
                     // Check for an overflow from bit 3.
                     if ((previousCounter & 0x0008) && (!((previousCounter + 4) & 0x0008)))
@@ -580,8 +585,5 @@ void IOPorts::updateRegisters(int32_t cyclesLeftToRun)
         }
     }
 
-    if (cyclesLeftToRun < 0)
-        previousCycleState = cyclesPerFrame + cyclesLeftToRun;
-    else
-        previousCycleState = cyclesLeftToRun;
+    previousCycleState = currentCycleState;
 }

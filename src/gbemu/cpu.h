@@ -34,6 +34,7 @@ class CPU
         bool stopped;
 
         uint32_t clockCyclesExecuted;
+        uint32_t lcdCyclesOffset;
         uint8_t opcode;
 
         union registers {

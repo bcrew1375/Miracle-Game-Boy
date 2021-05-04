@@ -63,7 +63,7 @@ class IOPorts
         void updateRegisters(int32_t cyclesExecuted);
 
     private:
-        void updateLcdStatMode(int32_t cyclesLeftToRun);
+        void updateLcdStatMode(uint32_t cyclesExecuted);
 
         uint8_t backgroundPalette;
         uint8_t controller;
@@ -98,6 +98,7 @@ class IOPorts
         bool timerCounterOverflow;
 
         int32_t previousCycleState;
+        int32_t currentCycleState;
         uint32_t cyclesPerFrame;
         uint16_t internalCounter;
         uint16_t lcdStatModeCycles;

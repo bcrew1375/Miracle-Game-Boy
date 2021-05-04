@@ -28,6 +28,7 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
     uint8_t cbBitNumber;
     uint8_t *cbRegister;
 
+    lcdCyclesOffset = 0;
 
     while (cyclesLeftToRun > 0) {
         // For debugging purposes. This is used to catch problems with code executing in restricted space.
@@ -441,13 +442,21 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
             interruptMasterEnableFlag = true;
         }
 
-        ioPorts->updateRegisters(cyclesLeftToRun);
+        ioPorts->updateRegisters(clockCyclesExecuted);
 
         if (ioPorts->getHBlankBeginFlag() == true)
             display->createScanline();
+
+        if (!(ioPorts->getLcdControl() & 0x80))
+            lcdCyclesOffset += clockCyclesExecuted;
     }
 
-    return cyclesLeftToRun;
+    // If the LCD was switched from off to on during this execution loop, offset the
+    // next loop with these cycles to prevent frame desynchronization.
+    if (ioPorts->getLcdControl() & 0x80)
+        return cyclesLeftToRun + lcdCyclesOffset;
+    else
+        return cyclesLeftToRun;
 }
 
 

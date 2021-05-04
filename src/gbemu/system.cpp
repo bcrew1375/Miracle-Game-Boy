@@ -17,6 +17,8 @@ System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, uint
     memory->setSaveRam(saveData, saveDataSize);
 
     isRunning = true;
+
+    cyclesLeftToRun = cyclesPerFrame;
 }
 
 
@@ -66,15 +68,17 @@ uint8_t *System::getSaveData()
 
 void System::executeCycles() {
     // TO DO: Transfer the main execution loop to the CPU class to prevent calling "execute" for every instruction.
-    cyclesLeftToRun = cpu->execute(cyclesPerFrame);
+    cyclesLeftToRun = cpu->execute(cyclesLeftToRun);
 
     // If the CPU ran less cycles than it was supposed to, it encountered an invalid opcode and has to be terminated.
-    if (cyclesLeftToRun > 0) {
+    /*if (cyclesLeftToRun > 0) {
         previousOpcode = cpu->getOpcode();
         previousPC = cpu->getRegisterPC();
         isRunning = false;
         systemError = "Invalid opcode: " + std::to_string(previousOpcode) + " at PC: " + std::to_string(previousPC);
-    }
+    }*/
+
+    cyclesLeftToRun += cyclesPerFrame;
 }
 
 
