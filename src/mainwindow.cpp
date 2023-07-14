@@ -1,20 +1,20 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include "platformsmap.h"
+
 #include <QBuffer>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QSettings>
 
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
-
-#include "platformsmap.h"
 
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    openGlWidget = new OpenGlWidget(this); //(QOpenGLWidget *) this->ui->centralwidget;
+    openGlWidget = new OpenGlWidget(this);
     setCentralWidget(openGlWidget);
 
     platform = nullptr;

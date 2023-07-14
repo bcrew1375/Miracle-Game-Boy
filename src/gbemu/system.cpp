@@ -36,7 +36,7 @@ bool System::getIsRunning()
 
 
 double System::getRefreshRate() {
-    return displayRefreshRate;
+    return 500;//displayRefreshRate;
 }
 
 

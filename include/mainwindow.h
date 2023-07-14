@@ -5,6 +5,7 @@
 
 #include "platform.h"
 #include "opengl/opengl.h"
+#include "ui_mainwindow.h"
 
 
 QT_BEGIN_NAMESPACE

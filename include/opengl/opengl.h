@@ -2,15 +2,15 @@
 #define OPENGL_H
 
 #include <QtOpenGLWidgets/QOpenGLWidget>
-#include <QtOpenGL>
+#include <QtOpenGL/QtOpenGL>
+#include <QString>
 
-#define VERTEX_SHADER_FILENAME "opengl/shaders/default_vertex.glsl"
-#define FRAGMENT_SHADER_FILENAME "opengl/shaders/default_fragment.glsl"
 #define EMULATED_SCREEN_RESOLUTION_X 160
 #define EMULATED_SCREEN_RESOLUTION_Y 144
 
 
 class OpenGlWidget : public QOpenGLWidget, protected QOpenGLFunctions {
+    Q_OBJECT
 
 public:
     OpenGlWidget(QWidget *parent);
@@ -24,13 +24,14 @@ protected:
     void paintGL() override;
 
 private:
-    void updateTexture(uint8_t *textureData);
+    const QString mVertexShaderSource; 
+    const QString mFragmentShaderSource;
 
-    QOpenGLShader *vertexShader;
-    QOpenGLShader *fragmentShader;
-    QOpenGLShaderProgram *shaderProgram;
-    QOpenGLBuffer *vertexBufferObject;
-    QOpenGLTexture *emulatedScreenTexture;
+    QOpenGLShader *mVertexShader;
+    QOpenGLShader *mFragmentShader;
+    QOpenGLShaderProgram *mShaderProgram;
+    QOpenGLBuffer *mVertexBufferObject;
+    QOpenGLTexture *mEmulatedScreenTexture;
 };
 
 #endif // OPENGL_H

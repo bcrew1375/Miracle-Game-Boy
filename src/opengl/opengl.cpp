@@ -4,7 +4,35 @@
 #include "opengl.h"
 
 
-OpenGlWidget::OpenGlWidget(QWidget *parent) : QOpenGLWidget(parent) {}
+OpenGlWidget::OpenGlWidget(QWidget* parent) : QOpenGLWidget(parent),
+    mVertexShaderSource(
+        "#version 110\n" \
+
+        "attribute vec2 vertexCoordinates;\n" \
+        "varying vec2 textureCoordinates;\n" \
+        "uniform float scaleX;\n" \
+        "uniform float scaleY;\n" \
+
+        "void main()\n" \
+        "{\n" \
+            "vec2 vertexVerticalFlip = vec2(vertexCoordinates.x, vertexCoordinates.y * -1.0);\n" \
+            "vec2 vertexScaleCoordinates = vec2(vertexVerticalFlip.x * scaleX, vertexVerticalFlip.y * scaleY);\n" \
+            "gl_Position = vec4(vertexScaleCoordinates, 0.0, 1.0);\n" \
+            "textureCoordinates = vertexCoordinates * vec2(0.5, 0.5) + vec2(0.5, 0.5);\n" \
+        "}" \
+    ),
+    mFragmentShaderSource(
+        "#version 110\n" \
+        "uniform sampler2D texture;\n" \
+        "varying vec2 textureCoordinates;\n" \
+
+        "void main(void)\n" \
+        "{\n" \
+        "    gl_FragColor = texture2D(texture, textureCoordinates);\n" \
+        "}"
+    )
+ {
+}
 
 
 void OpenGlWidget::initializeGL() {
@@ -12,10 +40,6 @@ void OpenGlWidget::initializeGL() {
 
     f->glClearColor(0, 0, 0, 0);
 
-    vertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
-    fragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);
-    shaderProgram = new QOpenGLShaderProgram();
-    vertexBufferObject = new QOpenGLBuffer();
 
     GLfloat vertexCoordinates [] = {
                                     -1.0, -1.0,
@@ -24,34 +48,39 @@ void OpenGlWidget::initializeGL() {
                                      1.0,  1.0
                                    };
 
-    vertexShader->compileSourceFile(VERTEX_SHADER_FILENAME);
-    fragmentShader->compileSourceFile(FRAGMENT_SHADER_FILENAME);
+    mVertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
+    mFragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);
+    mShaderProgram = new QOpenGLShaderProgram();
+    mVertexBufferObject = new QOpenGLBuffer();
+    mEmulatedScreenTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
 
-    shaderProgram->addShader(vertexShader);
-    shaderProgram->addShader(fragmentShader);
-    shaderProgram->link();
-    shaderProgram->bind();
+    mVertexShader->compileSourceCode(mVertexShaderSource);
+    mFragmentShader->compileSourceCode(mFragmentShaderSource);
 
-    vertexBufferObject->create();
-    vertexBufferObject->setUsagePattern(QOpenGLBuffer::DynamicDraw);
-    vertexBufferObject->bind();
-    vertexBufferObject->allocate(vertexCoordinates, 8 * sizeof(float));
+    mShaderProgram->addShader(mVertexShader);
+    mShaderProgram->addShader(mFragmentShader);
+    mShaderProgram->link();
+    mShaderProgram->bind();
 
-    shaderProgram->enableAttributeArray("vertexCoordinates");
-    shaderProgram->setAttributeBuffer("vertexCoordinates", GL_FLOAT, 0, 2);
+    mVertexBufferObject->create();
+    mVertexBufferObject->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+    mVertexBufferObject->bind();
+    mVertexBufferObject->allocate(vertexCoordinates, 8 * sizeof(float));
 
-    shaderProgram->setUniformValue("scaleX", (GLfloat)1.0);
-    shaderProgram->setUniformValue("scaleY", (GLfloat)1.0);
+    mShaderProgram->enableAttributeArray("vertexCoordinates");
+    mShaderProgram->setAttributeBuffer("vertexCoordinates", GL_FLOAT, 0, 2);
 
-    shaderProgram->release();
-    vertexBufferObject->release();
+    mShaderProgram->setUniformValue("scaleX", (GLfloat)1.0);
+    mShaderProgram->setUniformValue("scaleY", (GLfloat)1.0);
 
-    emulatedScreenTexture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-    emulatedScreenTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
-    emulatedScreenTexture->setSize(EMULATED_SCREEN_RESOLUTION_X, EMULATED_SCREEN_RESOLUTION_Y);
-    emulatedScreenTexture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-    emulatedScreenTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
-    emulatedScreenTexture->allocateStorage();
+    mShaderProgram->release();
+    mVertexBufferObject->release();
+
+    mEmulatedScreenTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
+    mEmulatedScreenTexture->setSize(EMULATED_SCREEN_RESOLUTION_X, EMULATED_SCREEN_RESOLUTION_Y);
+    mEmulatedScreenTexture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+    mEmulatedScreenTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
+    mEmulatedScreenTexture->allocateStorage();
 
     clearEmulatedScreen();
 }
@@ -73,25 +102,25 @@ void OpenGlWidget::resizeGL(int w, int h) {
         scaleY = viewportAspectRatio / emulatedAspectRatio;
     }
 
-    shaderProgram->bind();
-    shaderProgram->setUniformValue("scaleX", scaleX);
-    shaderProgram->setUniformValue("scaleY", scaleY);
-    shaderProgram->release();
+    mShaderProgram->bind();
+    mShaderProgram->setUniformValue("scaleX", scaleX);
+    mShaderProgram->setUniformValue("scaleY", scaleY);
+    mShaderProgram->release();
 }
 
 
 void OpenGlWidget::paintGL() {
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
-    shaderProgram->bind();
-    vertexBufferObject->bind();
-    emulatedScreenTexture->bind();
+    mShaderProgram->bind();
+    mVertexBufferObject->bind();
+    mEmulatedScreenTexture->bind();
 
     f->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    shaderProgram->release();
-    vertexBufferObject->release();
-    emulatedScreenTexture->release();
+    mShaderProgram->release();
+    mVertexBufferObject->release();
+    mEmulatedScreenTexture->release();
 }
 
 
@@ -104,14 +133,14 @@ void OpenGlWidget::clearEmulatedScreen() {
 
 
 void OpenGlWidget::updateEmulatedScreen(uint32_t *screenData) {
-    emulatedScreenTexture->destroy();
-    emulatedScreenTexture->create();
-    emulatedScreenTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
-    emulatedScreenTexture->setSize(EMULATED_SCREEN_RESOLUTION_X, EMULATED_SCREEN_RESOLUTION_Y);
-    emulatedScreenTexture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-    emulatedScreenTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
-    emulatedScreenTexture->allocateStorage();
+    mEmulatedScreenTexture->destroy();
+    mEmulatedScreenTexture->create();
+    mEmulatedScreenTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
+    mEmulatedScreenTexture->setSize(EMULATED_SCREEN_RESOLUTION_X, EMULATED_SCREEN_RESOLUTION_Y);
+    mEmulatedScreenTexture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+    mEmulatedScreenTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
+    mEmulatedScreenTexture->allocateStorage();
 
-    emulatedScreenTexture->setData(QOpenGLTexture::PixelFormat::RGBA, QOpenGLTexture::PixelType::UInt32_RGBA8, screenData);
+    mEmulatedScreenTexture->setData(QOpenGLTexture::PixelFormat::RGBA, QOpenGLTexture::PixelType::UInt32_RGBA8, screenData);
     this->update();
 }
