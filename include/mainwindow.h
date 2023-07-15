@@ -18,17 +18,17 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
     public:
-        MainWindow(QWidget *parent = nullptr);
+        MainWindow(QWidget* parent = nullptr);
         ~MainWindow();
 
     private:
-        OpenGlWidget *openGlWidget;
+        OpenGlWidget* openGlWidget;
 
-        Platform *platform;
+        Platform* platform;
 
-        QTimer *statusBarTimer;
+        QTimer* statusBarTimer;
 
-        Ui::MainWindow *ui;
+        Ui::MainWindow* ui;
 
     private slots:
         void emulatedScreenUpdate();

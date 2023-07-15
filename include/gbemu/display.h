@@ -8,9 +8,9 @@
 class Display
 {
     public:
-        Display(uint8_t *videoRam, uint8_t *spriteAttributeTable, IOPorts *ioPorts);
+        Display(uint8_t* videoRam, uint8_t* spriteAttributeTable, IOPorts* ioPorts);
 
-        uint32_t *getFrameBuffer();
+        uint32_t* getFrameBuffer();
 
         void createScanline();
 
@@ -27,12 +27,12 @@ class Display
                                         0x00000000  // Black
                                       };
 
-        IOPorts *ioPorts;
+        IOPorts* ioPorts;
 
         uint32_t finalDisplayBuffer[160 * 144];
 
-        uint8_t *spriteAttributeTable;
-        uint8_t *videoRam;
+        uint8_t* spriteAttributeTable;
+        uint8_t* videoRam;
         uint8_t backgroundTileMap[32 * 32];
         uint8_t backgroundWindowScanlineBuffer[160];
         uint8_t finalizedScanline[160];

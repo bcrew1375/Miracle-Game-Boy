@@ -30,13 +30,13 @@ Platform::~Platform()
 }
 
 
-uint16_t Platform::getFPS()
+uint16_t Platform::getFPS() const
 {
     return FPS;
 }
 
 
-uint32_t *Platform::getFrameBuffer()
+uint32_t* Platform::getFrameBuffer() const
 {
     return system->getFrameBuffer();
 }
@@ -63,7 +63,7 @@ void Platform::pause() {
 }
 
 
-QByteArray Platform::readSaveRamFromFile()
+QByteArray Platform::readSaveRamFromFile() const
 {
     QDir *directory = new QDir();
     QFile *saveFile = new QFile(directory->currentPath().append(saveFilename));
@@ -205,6 +205,6 @@ bool Platform::eventFilter(QObject *obj, QEvent *event)
 }
 
 
-QString Platform::getErrorMessage() {
+QString Platform::getErrorMessage() const {
     return errorMessage;
 }

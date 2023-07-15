@@ -16,25 +16,25 @@ class System
         System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, uint8_t *saveData, uint32_t saveDataSize);
         ~System();
 
-        bool getIsRunning();
+        bool getIsRunning() const;
 
-        double getRefreshRate();
+        double getRefreshRate() const;
 
-        std::string getSystemError();
+        std::string getSystemError() const;
 
-        uint32_t *getFrameBuffer();
-        uint32_t getSaveDataSize();
+        uint32_t* getFrameBuffer() const;
+        uint32_t getSaveDataSize() const;
 
-        uint8_t *getSaveData();
+        uint8_t* getSaveData() const;
 
         void executeCycles();
         void setControllerInputs(bool *buttonInputs);
 
     private:
-        CPU *cpu;
-        Display *display;
-        IOPorts *ioPorts;
-        Memory *memory;
+        CPU* cpu;
+        Display* display;
+        IOPorts* ioPorts;
+        Memory* memory;
 
         bool isRunning;
 

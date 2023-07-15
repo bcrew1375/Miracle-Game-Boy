@@ -11,7 +11,7 @@ CPU::CPU(Memory *memory, IOPorts *ioPorts, Display *display)
 }
 
 
-bool CPU::getInterruptMasterEnableFlag()
+bool CPU::getInterruptMasterEnableFlag() const
 {
     return interruptMasterEnableFlag;
 }
@@ -437,13 +437,13 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
 }
 
 
-uint16_t CPU::getRegisterPC()
+uint16_t CPU::getRegisterPC() const
 {
     return registers.PC;
 }
 
 
-uint8_t CPU::getOpcode()
+uint8_t CPU::getOpcode() const
 {
     return opcode;
 }

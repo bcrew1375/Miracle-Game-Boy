@@ -43,139 +43,139 @@ bool IOPorts::getHBlankBeginFlag()
 }
 
 
-uint8_t IOPorts::getBackgroundPalette()
+uint8_t IOPorts::getBackgroundPalette() const
 {
     return backgroundPalette;
 }
 
 
-uint8_t IOPorts::getController()
+uint8_t IOPorts::getController() const
 {
     return controller;
 }
 
 
-uint8_t IOPorts::getDivider()
+uint8_t IOPorts::getDivider() const
 {
     return (internalCounter & 0xFF00) >> 8;
 }
 
 
-uint8_t IOPorts::getDmaTransfer()
+uint8_t IOPorts::getDmaTransfer() const
 {
     return dmaTransfer;
 }
 
 
-uint8_t IOPorts::getInterruptRequestFlags()
+uint8_t IOPorts::getInterruptRequestFlags() const
 {
     return interruptRequestFlags;
 }
 
 
-uint8_t IOPorts::getLcdControl()
+uint8_t IOPorts::getLcdControl() const
 {
     return lcdControl;
 }
 
 
-uint8_t IOPorts::getLcdStatus()
+uint8_t IOPorts::getLcdStatus() const
 {
     return lcdStatus;
 }
 
 
-uint8_t IOPorts::getLcdYCompare()
+uint8_t IOPorts::getLcdYCompare() const
 {
     return lcdYCompare;
 }
 
 
-uint8_t IOPorts::getLcdYCoordinate()
+uint8_t IOPorts::getLcdYCoordinate() const
 {
     return lcdYCoordinate;
 }
 
 
-uint8_t IOPorts::getScrollX()
+uint8_t IOPorts::getScrollX() const
 {
     return scrollX;
 }
 
 
-uint8_t IOPorts::getScrollY()
+uint8_t IOPorts::getScrollY() const
 {
     return scrollY;
 }
 
 
-uint8_t IOPorts::getSerialTransferControl()
+uint8_t IOPorts::getSerialTransferControl() const
 {
     return serialTransferControl;
 }
 
 
-uint8_t IOPorts::getSerialTransferData()
+uint8_t IOPorts::getSerialTransferData() const
 {
     return serialTransferData;
 }
 
 
-uint8_t IOPorts::getSoundChannel1Length()
+uint8_t IOPorts::getSoundChannel1Length() const
 {
     return soundChannel1Length;
 }
 
 
-uint8_t IOPorts::getSoundChannel1Sweep()
+uint8_t IOPorts::getSoundChannel1Sweep() const
 {
     return soundChannel1Sweep;
 }
 
 
-uint8_t IOPorts::getSoundOnOff()
+uint8_t IOPorts::getSoundOnOff() const
 {
     return soundOnOff;
 }
 
 
-uint8_t IOPorts::getSpritePalette0()
+uint8_t IOPorts::getSpritePalette0() const
 {
     return spritePalette0;
 }
 
 
-uint8_t IOPorts::getSpritePalette1()
+uint8_t IOPorts::getSpritePalette1() const
 {
     return spritePalette1;
 }
 
 
-uint8_t IOPorts::getTimerControl()
+uint8_t IOPorts::getTimerControl() const
 {
     return timerControl;
 }
 
 
-uint8_t IOPorts::getTimerCounter()
+uint8_t IOPorts::getTimerCounter() const
 {
     return timerCounter;
 }
 
 
-uint8_t IOPorts::getTimerModulo()
+uint8_t IOPorts::getTimerModulo() const
 {
     return timerModulo;
 }
 
 
-uint8_t IOPorts::getWindowX()
+uint8_t IOPorts::getWindowX() const
 {
     return windowX;
 }
 
 
-uint8_t IOPorts::getWindowY()
+uint8_t IOPorts::getWindowY() const
 {
     return windowY;
 }

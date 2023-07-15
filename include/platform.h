@@ -15,14 +15,14 @@ class Platform : public QWidget {
         Platform(int systemType);
         ~Platform();
 
-        QByteArray readSaveRamFromFile();
-        QString getErrorMessage();
+        QByteArray readSaveRamFromFile() const;
+        QString getErrorMessage() const;
 
         bool isPaused;
         bool isRunning;
 
-        uint16_t getFPS();
-        uint32_t *getFrameBuffer();
+        uint16_t getFPS() const;
+        uint32_t* getFrameBuffer() const;
 
         void loadRomFile(QString romFilename, QByteArray bootROM, QByteArray romData);
         void pause();
@@ -35,24 +35,24 @@ class Platform : public QWidget {
         virtual bool eventFilter(QObject *obj, QEvent *event);
 
     private:
-        QElapsedTimer *speedRegulationTimer;
+        QElapsedTimer* speedRegulationTimer;
         QString errorMessage;
         QString saveFilename;
         QString saveDirectory;
 
-        System *system;
+        System* system;
 
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
         bool frameLocked;
 
-        double  milliSecondsPerFrame;
+        double milliSecondsPerFrame;
 
         quint64 nanoSecondsPerFrame;
         quint64 timeElapsed;
 
         uint16_t FPS;
 
-        uint8_t *romBuffer;
+        const uint8_t* romBuffer;
         uint8_t romSizeInBytes;
 
     private slots:

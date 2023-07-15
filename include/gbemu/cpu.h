@@ -10,23 +10,23 @@
 class CPU
 {
     public:
-        CPU(Memory *memory, IOPorts *ioPorts, Display *display);
+        CPU(Memory* memory, IOPorts* ioPorts, Display* display);
 
-        bool getInterruptMasterEnableFlag();
+        bool getInterruptMasterEnableFlag() const;
 
         int32_t execute(int32_t cyclesLeftToRun);
 
-        uint16_t getRegisterPC();
-        uint8_t getOpcode();
+        uint16_t getRegisterPC() const;
+        uint8_t getOpcode() const;
 
         void handleInterrupts();
         void resetCPU();
         void setInterruptMasterEnableFlag(bool state);
 
     private:
-        Memory *memory;
-        IOPorts *ioPorts;
-        Display *display;
+        Memory* memory;
+        IOPorts* ioPorts;
+        Display* display;
 
         bool halted;
         bool interruptEnableDelayFlag;

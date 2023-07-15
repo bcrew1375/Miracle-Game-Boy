@@ -5,9 +5,6 @@
 #include <QtOpenGL/QtOpenGL>
 #include <QString>
 
-#define EMULATED_SCREEN_RESOLUTION_X 160
-#define EMULATED_SCREEN_RESOLUTION_Y 144
-
 
 class OpenGlWidget : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
@@ -16,22 +13,26 @@ public:
     OpenGlWidget(QWidget *parent);
 
     void clearEmulatedScreen();
-    void updateEmulatedScreen(uint32_t *screenData);
+    void updateEmulatedScreen(uint32_t* screenData);
 
 protected:
     void initializeGL() override;
-    void resizeGL(int w, int h) override;
+    void resizeGL(int width, int height) override;
     void paintGL() override;
 
 private:
-    const QString mVertexShaderSource; 
-    const QString mFragmentShaderSource;
+    static const uint16_t emulatedScreenResolutionX = 160;
+    static const uint16_t emulatedScreenResolutionY = 144;
+    static const uint32_t emulatedScreenBufferSize = emulatedScreenResolutionX * emulatedScreenResolutionY;
 
-    QOpenGLShader *mVertexShader;
-    QOpenGLShader *mFragmentShader;
-    QOpenGLShaderProgram *mShaderProgram;
-    QOpenGLBuffer *mVertexBufferObject;
-    QOpenGLTexture *mEmulatedScreenTexture;
+    const QString vertexShaderSource; 
+    const QString fragmentShaderSource;
+
+    QOpenGLShader* vertexShader;
+    QOpenGLShader* fragmentShader;
+    QOpenGLShaderProgram* shaderProgram;
+    QOpenGLBuffer* vertexBufferObject;
+    QOpenGLTexture* emulatedScreenTexture;
 };
 
 #endif // OPENGL_H

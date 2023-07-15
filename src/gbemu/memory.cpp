@@ -53,7 +53,7 @@ Memory::~Memory()
 }
 
 
-uint32_t Memory::getSaveRamSize()
+uint32_t Memory::getSaveRamSize() const
 {
     if (memoryBankController != nullptr)
         return memoryBankController->getNumberOfRamBanks() * 8192;
@@ -83,7 +83,7 @@ uint8_t *Memory::getVideoRamPointer()
 }
 
 
-uint8_t Memory::readByte(uint16_t address)
+uint8_t Memory::readByte(uint16_t address) const
 {
     if (address < 0x4000) {
         return romBank0[address];

@@ -10,23 +10,23 @@
 class Memory
 {
     public:
-        Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts);
+        Memory(uint8_t* bootROM, uint8_t* romData, uint32_t romSizeInBytes, IOPorts* ioPorts);
         ~Memory();
 
-        uint32_t getSaveRamSize();
-        uint8_t *getSaveRamPointer();
-        uint8_t *getSpriteAttributeTablePointer();
-        uint8_t *getVideoRamPointer();
-        uint8_t readByte(uint16_t address);
+        uint32_t getSaveRamSize() const;
+        uint8_t* getSaveRamPointer();
+        uint8_t* getSpriteAttributeTablePointer();
+        uint8_t* getVideoRamPointer();
+        uint8_t readByte(uint16_t address) const;
 
         void setSaveRam(uint8_t *saveRam, uint32_t saveSize);
         void writeByte(uint16_t address, uint8_t data);
 
     private:
-        IOPorts *ioPorts;
-        MemoryBankController *memoryBankController;
+        IOPorts* ioPorts;
+        MemoryBankController* memoryBankController;
 
-        uint8_t *romData;
+        uint8_t* romData;
         uint8_t highRam[0x7F];
         uint8_t internalRamBank0[0x1000];
         uint8_t internalRamBank1[0x1000];

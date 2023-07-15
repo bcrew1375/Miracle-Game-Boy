@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+
 // Map available platform strings to integers.
 std::map<std::string, int> availablePlatforms {
     {"Game Boy Classic", 0x01},

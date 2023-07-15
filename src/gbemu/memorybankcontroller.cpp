@@ -115,13 +115,13 @@ uint8_t *MemoryBankController::getRamBankPointer()
 }
 
 
-uint8_t MemoryBankController::getNumberOfRamBanks()
+uint8_t MemoryBankController::getNumberOfRamBanks() const
 {
     return numberOfRamBanks;
 }
 
 
-uint8_t MemoryBankController::readExternalRam(uint16_t address)
+uint8_t MemoryBankController::readExternalRam(uint16_t address) const
 {
     if ((hasExternalRam == true) && (ramEnabled == true))
         return ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)];
@@ -130,7 +130,7 @@ uint8_t MemoryBankController::readExternalRam(uint16_t address)
 }
 
 
-uint8_t MemoryBankController::readRomBank1(uint16_t address)
+uint8_t MemoryBankController::readRomBank1(uint16_t address) const
 {
     return romBank1[address - 0x4000];
 }

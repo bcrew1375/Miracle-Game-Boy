@@ -62,7 +62,7 @@ void Display::convertTileData(uint16_t tileData, uint8_t palette, bool isSprite)
 }
 
 
-void Display::getBackgroundTileMap()
+void Display::getBackgroundTileMap() //const
 {
     switch (ioPorts->getLcdControl() & 0x08) {
     case 0x00: memcpy(backgroundTileMap, &videoRam[0x1800], 0x400); break;

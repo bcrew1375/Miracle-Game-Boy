@@ -29,36 +29,37 @@ System::~System()
 }
 
 
-bool System::getIsRunning()
+bool System::getIsRunning() const
 {
     return isRunning;
 }
 
 
-double System::getRefreshRate() {
+double System::getRefreshRate() const
+{
     return 500;//displayRefreshRate;
 }
 
 
-std::string System::getSystemError()
+std::string System::getSystemError() const
 {
     return systemError;
 }
 
 
-uint32_t *System::getFrameBuffer()
+uint32_t *System::getFrameBuffer() const
 {
     return display->getFrameBuffer();
 }
 
 
-uint32_t System::getSaveDataSize()
+uint32_t System::getSaveDataSize() const
 {
     return memory->getSaveRamSize();
 }
 
 
-uint8_t *System::getSaveData()
+uint8_t *System::getSaveData() const
 {
     return memory->getSaveRamPointer();
 }
