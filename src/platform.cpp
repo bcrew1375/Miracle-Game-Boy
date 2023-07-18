@@ -18,7 +18,7 @@ Platform::Platform(int systemType) {
 
     resetFPS();
 
-    frameLocked = false;
+    frameLocked = true;
     isRunning = false;
 
     errorMessage = "";
