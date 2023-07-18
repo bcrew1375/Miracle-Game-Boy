@@ -2,15 +2,18 @@
 #define DISPLAY_H
 
 #include <stdint.h>
+#include <memory>
 
 #include "ioports.h"
 
 class Display
 {
     public:
-        Display(uint8_t* videoRam, uint8_t* spriteAttributeTable, IOPorts* ioPorts);
+        Display(std::shared_ptr<uint8_t[]> videoRam,
+                std::shared_ptr<uint8_t[]> spriteAttributeTable,
+                std::shared_ptr<IOPorts> ioPorts);
 
-        uint32_t* getFrameBuffer();
+        std::shared_ptr<uint32_t[]> getFrameBuffer();
 
         void createScanline();
 
@@ -27,17 +30,28 @@ class Display
                                         0x00000000  // Black
                                       };
 
-        IOPorts* ioPorts;
+        static const uint16_t FRAME_BUFFER_X_SIZE = 160;
+        static const uint16_t FRAME_BUFFER_Y_SIZE = 144;
+        static const uint32_t FRAME_BUFFER_SIZE = (FRAME_BUFFER_X_SIZE * FRAME_BUFFER_Y_SIZE);
 
-        uint32_t finalDisplayBuffer[160 * 144];
+        static const uint32_t BACKGROUND_TILE_MAP_SIZE = 32 * 32;
+        static const uint32_t BACKGROUND_WINDOW_SCANLINE_BUFFER_SIZE = 160;
+        static const uint32_t FINALIZED_SCANLINE_BUFFER_SIZE = 160;
+        static const uint32_t SPRITE_SCANLINE_BUFFER_SIZE = 160;
+        static const uint32_t TILE_LINE_BUFFER_SIZE = 8;
 
-        uint8_t* spriteAttributeTable;
-        uint8_t* videoRam;
-        uint8_t backgroundTileMap[32 * 32];
-        uint8_t backgroundWindowScanlineBuffer[160];
-        uint8_t finalizedScanline[160];
-        uint8_t spriteScanlineBuffer[160];
-        uint8_t tileLine[8];
+        std::shared_ptr<uint32_t[]> finalDisplayBuffer;
+
+        std::shared_ptr<IOPorts> ioPorts;
+
+        std::shared_ptr<uint8_t[]> spriteAttributeTable;
+        std::shared_ptr<uint8_t[]> videoRam;
+        
+        std::unique_ptr<uint8_t[]> backgroundTileMap;
+        std::unique_ptr<uint8_t[]> backgroundWindowScanlineBuffer;
+        std::unique_ptr<uint8_t[]> finalizedScanlineBuffer;
+        std::unique_ptr<uint8_t[]> spriteScanlineBuffer;
+        std::unique_ptr<uint8_t[]> tileLineBuffer;
         uint8_t windowLineCounter;
 };
 

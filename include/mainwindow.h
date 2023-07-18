@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <memory>
 #include <QMainWindow>
 
 #include "platform.h"
@@ -24,9 +25,8 @@ class MainWindow : public QMainWindow
     private:
         OpenGlWidget* openGlWidget;
 
-        Platform* platform;
-
-        QTimer* statusBarTimer;
+        std::unique_ptr<Platform> platform;
+        std::unique_ptr<QTimer> statusBarTimer;
 
         Ui::MainWindow* ui;
 

@@ -1,16 +1,20 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include "ioports.h"
+#include "MemoryMap.h"
+#include "display.h"
+
+#include <memory>
 #include <stdint.h>
 
-#include "ioports.h"
-#include "memory.h"
-#include "display.h"
 
 class CPU
 {
     public:
-        CPU(Memory* memory, IOPorts* ioPorts, Display* display);
+        CPU(std::shared_ptr<MemoryMap> memoryMap,
+            std::shared_ptr<IOPorts> ioPorts,
+            std::shared_ptr<Display> display);
 
         bool getInterruptMasterEnableFlag() const;
 
@@ -24,9 +28,9 @@ class CPU
         void setInterruptMasterEnableFlag(bool state);
 
     private:
-        Memory* memory;
-        IOPorts* ioPorts;
-        Display* display;
+        std::shared_ptr<MemoryMap> memoryMap;
+        std::shared_ptr<IOPorts> ioPorts;
+        std::shared_ptr<Display> display;
 
         bool halted;
         bool interruptEnableDelayFlag;

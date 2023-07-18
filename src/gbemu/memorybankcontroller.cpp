@@ -1,24 +1,30 @@
 #include <iostream>
+#include <memory>
 
 #include "memorybankcontroller.h"
 
 
-MemoryBankController::MemoryBankController(uint8_t *romData)
+MemoryBankController::MemoryBankController(std::shared_ptr<uint8_t[]> romData)
 {
     this->romData = romData;
+
+    romBank1 = std::make_shared<uint8_t[]>(ROM_BANK_SIZE);
+    ramBank = std::make_shared<uint8_t[]>(MAX_RAM_BANK_SIZE);
+
     romBankSelected = 0x0001;
+
+    externalHardwareTypeCode = this->romData[0x147];
+    romSizeCode = this->romData[0x148];
+    ramBankSizeCode = this->romData[0x0149];
 
     advancedRomBankingMode = false;
     hasBatteryBackup = false;
     hasExternalRam = false;
-    externalHardwareTypeCode = romData[0x147];
+    hasSwitchableRamBanks = false;
+    ramEnabled = false;
+
     numberOfRamBanks = 0;
     ramBankSelected = 0x00;
-    ramBankSizeCode = romData[0x0149];
-    ramEnabled = false;
-    romSizeCode = romData[0x148];
-
-    memset(ramBank, 0xFF, 0x40000);
 
     switch (externalHardwareTypeCode)
     {
@@ -97,7 +103,8 @@ MemoryBankController::MemoryBankController(uint8_t *romData)
         default: hasSwitchableRamBanks = false; break;
     }
 
-    romBank1 = &this->romData[0x4000 * romBankSelected];
+    auto romDataOffset = this->romData.get() + (romBankSelected * ROM_BANK_SIZE);
+    std::copy(romDataOffset, romDataOffset + ROM_BANK_SIZE, romBank1.get());
 }
 
 
@@ -106,25 +113,29 @@ MemoryBankController::~MemoryBankController()
 }
 
 
-uint8_t *MemoryBankController::getRamBankPointer()
+std::shared_ptr<uint8_t[]> MemoryBankController::getRamBankPointer()
 {
     if (hasBatteryBackup == true)
+    {
         return ramBank;
+    }
     else
+    {
         return nullptr;
+    }
 }
 
 
-uint8_t MemoryBankController::getNumberOfRamBanks() const
+uint8_t MemoryBankController::getRamBankSize() const
 {
-    return numberOfRamBanks;
+    return numberOfRamBanks * RAM_BANK_SIZE;
 }
 
 
 uint8_t MemoryBankController::readExternalRam(uint16_t address) const
 {
     if ((hasExternalRam == true) && (ramEnabled == true))
-        return ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)];
+        return ramBank.get()[(ramBankSelected * RAM_BANK_SIZE) + (address - 0xA000)];
     else
         return 0xFF;
 }
@@ -132,13 +143,13 @@ uint8_t MemoryBankController::readExternalRam(uint16_t address) const
 
 uint8_t MemoryBankController::readRomBank1(uint16_t address) const
 {
-    return romBank1[address - 0x4000];
+    return romBank1.get()[address - ROM_BANK_SIZE];
 }
 
 
-void MemoryBankController::setRamBanks(uint8_t *ramData, uint32_t ramSize)
+void MemoryBankController::setRamBanks(std::shared_ptr<uint8_t[]> ramData, uint32_t ramSize)
 {
-    memcpy(ramBank, ramData, ramSize);
+    std::copy(ramData.get(), ramData.get() + MAX_RAM_BANK_SIZE, ramBank.get());
 }
 
 
@@ -188,8 +199,8 @@ void MemoryBankController::writeLowRomBankRegister(uint8_t data)
     }
 
     romBankSelected |= data;
-
-    romBank1 = &romData[romBankSelected * 0x4000];
+    auto romDataOffset = romData.get() + (romBankSelected * ROM_BANK_SIZE);
+    std::copy(romDataOffset, romDataOffset + ROM_BANK_SIZE, romBank1.get());
 }
 
 
@@ -233,5 +244,5 @@ void MemoryBankController::writeBankingModeRegister(uint8_t data)
 void MemoryBankController::writeExternalRam(uint16_t address, uint8_t data)
 {
     if ((hasExternalRam == true) && (ramEnabled == true))
-        ramBank[(ramBankSelected * 0x2000) + (address - 0xA000)] = data;
+        ramBank.get()[(ramBankSelected * RAM_BANK_SIZE) + (address - 0xA000)] = data;
 }

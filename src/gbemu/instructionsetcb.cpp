@@ -1,5 +1,5 @@
 #include "cpu.h"
-
+#include "MemoryMap.h"
 
 void CPU::z80_cb_reset_reg8_bit(uint8_t *reg8, uint8_t bitMask)
 {
@@ -9,7 +9,7 @@ void CPU::z80_cb_reset_reg8_bit(uint8_t *reg8, uint8_t bitMask)
 
 void CPU::z80_cb_reset_reghl_addr16_bit(uint8_t bitMask)
 {
-    memory->writeByte(registers.HL, memory->readByte(registers.HL) & bitMask);
+    memoryMap->writeByte(registers.HL, memoryMap->readByte(registers.HL) & bitMask);
 }
 
 
@@ -33,11 +33,11 @@ void CPU::z80_cb_rl_reg8(uint8_t *reg8)
 void CPU::z80_cb_rl_reghl_addr16()
 {
     bool carry = registers.flagC;
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     registers.flagC = data & 0x80;
     data = (data << 1) | (uint8_t)carry;
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 
     if (data == 0)
         registers.flagZ = true;
@@ -66,11 +66,11 @@ void CPU::z80_cb_rlc_reg8(uint8_t *reg8)
 
 void CPU::z80_cb_rlc_reghl_addr16()
 {
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
     registers.flagC = data & 0x80;
 
     data = (data << 1) | ((data & 0x80) >> 7);
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 
     if (data == 0)
         registers.flagZ = true;
@@ -101,11 +101,11 @@ void CPU::z80_cb_rr_reg8(uint8_t *reg8)
 void CPU::z80_cb_rr_reghl_addr16()
 {
     bool carry = registers.flagC;
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     registers.flagC = data & 0x01;
     data = (data >> 1) | (uint8_t)(carry << 7);
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 
     if (data == 0)
         registers.flagZ = true;
@@ -134,11 +134,11 @@ void CPU::z80_cb_rrc_reg8(uint8_t *reg8)
 
 void CPU::z80_cb_rrc_reghl_addr16()
 {
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     registers.flagC = data & 0x01;
     data = (data >> 1) | ((data & 0x01) << 7);
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 
     if (data == 0)
         registers.flagZ = true;
@@ -157,10 +157,10 @@ void CPU::z80_cb_set_reg8_bit(uint8_t *reg8, uint8_t bitMask)
 
 
 void CPU::z80_cb_set_reghl_addr16_bit(uint8_t bitMask) {
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     data |= bitMask;
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 }
 
 
@@ -185,7 +185,7 @@ void CPU::z80_cb_sla_reg8(uint8_t *reg8)
 
 void CPU::z80_cb_sla_reghl_addr16()
 {
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     if (data & 0x80)
         registers.flagC = true;
@@ -193,7 +193,7 @@ void CPU::z80_cb_sla_reghl_addr16()
         registers.flagC = false;;
 
     data <<= 1;
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 
     if (data == 0)
         registers.flagZ = true;
@@ -227,7 +227,7 @@ void CPU::z80_cb_sra_reg8(uint8_t *reg8)
 
 void CPU::z80_cb_sra_reghl_addr16()
 {
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     if (data & 0x01)
         registers.flagC = true;
@@ -236,7 +236,7 @@ void CPU::z80_cb_sra_reghl_addr16()
 
     // Preserve the sign bit.
     data = (data >> 1) | (data & 0x80);
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 
     if (data == 0)
         registers.flagZ = true;
@@ -269,7 +269,7 @@ void CPU::z80_cb_srl_reg8(uint8_t *reg8)
 
 void CPU::z80_cb_srl_reghl_addr16()
 {
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     if (data & 0x01)
         registers.flagC = true;
@@ -277,7 +277,7 @@ void CPU::z80_cb_srl_reghl_addr16()
         registers.flagC = false;
 
     data >>= 1;
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 
     if (data == 0)
         registers.flagZ = true;
@@ -306,10 +306,10 @@ void CPU::z80_cb_swap_reg8(uint8_t *reg8)
 
 void CPU::z80_cb_swap_reghl_addr16()
 {
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     data = (data << 4) | (data >> 4);
-    memory->writeByte(registers.HL, data);
+    memoryMap->writeByte(registers.HL, data);
 
     if (data == 0)
         registers.flagZ = true;
@@ -336,7 +336,7 @@ void CPU::z80_cb_test_reg8_bit(uint8_t *reg8, uint8_t bitMask)
 
 void CPU::z80_cb_test_reghl_addr16_bit(uint8_t bitMask)
 {
-    uint8_t data = memory->readByte(registers.HL);
+    uint8_t data = memoryMap->readByte(registers.HL);
 
     if (data & bitMask)
         registers.flagZ = false;

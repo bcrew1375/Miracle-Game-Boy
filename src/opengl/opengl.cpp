@@ -130,7 +130,7 @@ void OpenGlWidget::clearEmulatedScreen()
 {
     std::unique_ptr<uint32_t> clearBuffer(new uint32_t[emulatedScreenBufferSize]);
     
-    std::fill_n(clearBuffer.get(), emulatedScreenBufferSize, 0x00000000);
+    std::fill_n(clearBuffer.get(), emulatedScreenBufferSize, 0x000000000);
 
     updateEmulatedScreen(clearBuffer.get());
 }

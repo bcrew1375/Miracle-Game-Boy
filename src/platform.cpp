@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 
 #include <QApplication>
 #include <QByteArray>
@@ -6,6 +7,7 @@
 #include <QFile>
 #include <QKeyEvent>
 #include <QTimer>
+#include <QMessageBox>
 
 #include "platform.h"
 
@@ -25,8 +27,6 @@ Platform::Platform(int systemType) {
 
 Platform::~Platform()
 {
-    delete speedRegulationTimer;
-    delete system;
 }
 
 
@@ -36,7 +36,7 @@ uint16_t Platform::getFPS() const
 }
 
 
-uint32_t* Platform::getFrameBuffer() const
+std::shared_ptr<uint32_t[]> Platform::getFrameBuffer() const
 {
     return system->getFrameBuffer();
 }
@@ -54,7 +54,27 @@ void Platform::loadRomFile(QString romFilename, QByteArray bootROM, QByteArray r
 
     saveData = readSaveRamFromFile();
 
-    system = new System((uint8_t *)bootROM.constData(), (uint8_t *)romData.constData(), romData.size(), (uint8_t *)saveData.constData(), saveData.length());
+    try
+    {
+        std::unique_ptr bootROMArray = std::make_unique<uint8_t[]>(bootROM.size());
+        std::shared_ptr romDataArray = std::make_shared<uint8_t[]>(romData.size());
+        std::shared_ptr saveDataArray = std::make_shared<uint8_t[]>(saveData.size());
+
+        std::copy(bootROM.data(), bootROM.data() + bootROM.size(), bootROMArray.get());
+        std::copy(romData.data(), romData.data() + romData.size(), romDataArray.get());
+        std::copy(saveData.data(), saveData.data() + saveData.size(), saveDataArray.get());
+
+        system = std::make_unique<System>(
+            std::move(bootROMArray),
+            romDataArray,
+            romData.size(),
+            saveDataArray,
+            saveData.length());
+    }
+    catch (std::exception e)
+    {
+        QMessageBox::critical(this, "Error", e.what());
+    }
 }
 
 
@@ -111,7 +131,7 @@ void Platform::writeSaveRamToFile()
     qint32 saveDataSize;
 
     saveDataSize = system->getSaveDataSize();
-    saveData = saveData.fromRawData((const char *)system->getSaveData(), saveDataSize);
+    saveData = saveData.fromRawData(reinterpret_cast<char *>(system->getSaveData().get()), saveDataSize);
 
     if (!directory->exists(directory->currentPath() + saveDirectory))
         directory->mkdir(directory->currentPath() + saveDirectory);

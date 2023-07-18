@@ -1,19 +1,29 @@
 #include <iostream>
+#include <memory>
 
 #include "display.h"
 
 
-Display::Display(uint8_t *videoRam, uint8_t *spriteAttributeTable, IOPorts *ioPorts)
+Display::Display(std::shared_ptr<uint8_t[]> videoRam,
+                 std::shared_ptr<uint8_t[]> spriteAttributeTable,
+                 std::shared_ptr<IOPorts> ioPorts)
 {
     this->videoRam = videoRam;
     this->spriteAttributeTable = spriteAttributeTable;
     this->ioPorts = ioPorts;
 
-    memset(finalDisplayBuffer, 0xFF, 160 * 144 * sizeof(uint32_t));
+    backgroundTileMap = std::make_unique<uint8_t[]>(BACKGROUND_TILE_MAP_SIZE);
+    backgroundWindowScanlineBuffer = std::make_unique<uint8_t[]>(BACKGROUND_WINDOW_SCANLINE_BUFFER_SIZE);
+    finalizedScanlineBuffer = std::make_unique<uint8_t[]>(FINALIZED_SCANLINE_BUFFER_SIZE);
+    spriteScanlineBuffer = std::make_unique<uint8_t[]>(SPRITE_SCANLINE_BUFFER_SIZE);
+    tileLineBuffer = std::make_unique<uint8_t[]>(TILE_LINE_BUFFER_SIZE);
+
+    finalDisplayBuffer = std::make_shared<uint32_t[]>(FRAME_BUFFER_SIZE);
+    std::fill(finalDisplayBuffer.get(), finalDisplayBuffer.get() + FRAME_BUFFER_SIZE, 0xFFFFFFFF);
 }
 
 
-uint32_t *Display::getFrameBuffer()
+std::shared_ptr<uint32_t[]> Display::getFrameBuffer()
 {
     return finalDisplayBuffer;
 }
@@ -30,7 +40,7 @@ void Display::createScanline()
         getSpriteScanline();
 
         for (int x = 0; x < 160; x++)
-            finalDisplayBuffer[x + (currentLcdYCoordinate * 160)] = rgbaPixelColors[finalizedScanline[x]];
+            finalDisplayBuffer[x + (currentLcdYCoordinate * 160)] = rgbaPixelColors[finalizedScanlineBuffer[x]];
     }
     else
     {
@@ -51,22 +61,22 @@ void Display::convertTileData(uint16_t tileData, uint8_t palette, bool isSprite)
     if (isSprite == true)
         paletteColors[0] = 0xFF;
 
-    tileLine[0] = paletteColors[((tileData & 0x8000) >> 14) + ((tileData & 0x0080) >> 7)];
-    tileLine[1] = paletteColors[((tileData & 0x4000) >> 13) + ((tileData & 0x0040) >> 6)];
-    tileLine[2] = paletteColors[((tileData & 0x2000) >> 12) + ((tileData & 0x0020) >> 5)];
-    tileLine[3] = paletteColors[((tileData & 0x1000) >> 11) + ((tileData & 0x0010) >> 4)];
-    tileLine[4] = paletteColors[((tileData & 0x0800) >> 10) + ((tileData & 0x0008) >> 3)];
-    tileLine[5] = paletteColors[((tileData & 0x0400) >>  9) + ((tileData & 0x0004) >> 2)];
-    tileLine[6] = paletteColors[((tileData & 0x0200) >>  8) + ((tileData & 0x0002) >> 1)];
-    tileLine[7] = paletteColors[((tileData & 0x0100) >>  7) + ((tileData & 0x0001)     )];
+    tileLineBuffer[0] = paletteColors[((tileData & 0x8000) >> 14) + ((tileData & 0x0080) >> 7)];
+    tileLineBuffer[1] = paletteColors[((tileData & 0x4000) >> 13) + ((tileData & 0x0040) >> 6)];
+    tileLineBuffer[2] = paletteColors[((tileData & 0x2000) >> 12) + ((tileData & 0x0020) >> 5)];
+    tileLineBuffer[3] = paletteColors[((tileData & 0x1000) >> 11) + ((tileData & 0x0010) >> 4)];
+    tileLineBuffer[4] = paletteColors[((tileData & 0x0800) >> 10) + ((tileData & 0x0008) >> 3)];
+    tileLineBuffer[5] = paletteColors[((tileData & 0x0400) >>  9) + ((tileData & 0x0004) >> 2)];
+    tileLineBuffer[6] = paletteColors[((tileData & 0x0200) >>  8) + ((tileData & 0x0002) >> 1)];
+    tileLineBuffer[7] = paletteColors[((tileData & 0x0100) >>  7) + ((tileData & 0x0001)     )];
 }
 
 
 void Display::getBackgroundTileMap() //const
 {
     switch (ioPorts->getLcdControl() & 0x08) {
-    case 0x00: memcpy(backgroundTileMap, &videoRam[0x1800], 0x400); break;
-    case 0x08: memcpy(backgroundTileMap, &videoRam[0x1C00], 0x400); break;
+    case 0x00: std::copy(videoRam.get() + 0x1800, videoRam.get() + 0x1800 + 0x400, backgroundTileMap.get()); break;
+    case 0x08: std::copy(videoRam.get() + 0x1C00, videoRam.get() + 0x1C00 + 0x400, backgroundTileMap.get()); break;
     }
 }
 
@@ -124,7 +134,7 @@ void Display::getBackgroundWindowScanline()
             {
                 // Only draw pixels that are in the viewport.
                 if ((((x - tileDataOffsetX) + (mapX * 8)) >= 0) && ((x - tileDataOffsetX + (mapX * 8)) < 160))
-                    finalizedScanline[((x - tileDataOffsetX) + (mapX * 8))] = tileLine[x];
+                    finalizedScanlineBuffer[((x - tileDataOffsetX) + (mapX * 8))] = tileLineBuffer[x];
             }
         }
 
@@ -166,7 +176,7 @@ void Display::getBackgroundWindowScanline()
                 {
                     // Only draw pixels that are in the viewport.
                     if (((x + windowX) < 160) && ((x + windowX) >= 0))
-                        finalizedScanline[x + windowX] = tileLine[x];
+                        finalizedScanlineBuffer[x + windowX] = tileLineBuffer[x];
                 }
             }
 
@@ -175,7 +185,7 @@ void Display::getBackgroundWindowScanline()
     }
     else
     {
-        memset(finalizedScanline, backgroundPalette & 0x03, 160);
+        std::fill(finalizedScanlineBuffer.get(), finalizedScanlineBuffer.get() + 160, backgroundPalette & 0x03);
     }
 }
 
@@ -260,15 +270,15 @@ void Display::getSpriteScanline()
                 {
                     if (spriteXFlip)
                         tileDataOffsetX ^= 7;
-                    if (tileLine[tileDataOffsetX] != 0xFF) // Color 0 isn't drawn for sprites.
+                    if (tileLineBuffer[tileDataOffsetX] != 0xFF) // Color 0 isn't drawn for sprites.
                     {
                         if (backgroundWindowPriority == false)
-                            finalizedScanline[spriteX] = tileLine[tileDataOffsetX];
+                            finalizedScanlineBuffer[spriteX] = tileLineBuffer[tileDataOffsetX];
                         else
                         {
                             // If the background/window takes priority, only overwrite the pixel color associated with index 0.
-                            if (finalizedScanline[spriteX] == backgroundPaletteColorIndex0)
-                                finalizedScanline[spriteX] = tileLine[tileDataOffsetX];
+                            if (finalizedScanlineBuffer[spriteX] == backgroundPaletteColorIndex0)
+                                finalizedScanlineBuffer[spriteX] = tileLineBuffer[tileDataOffsetX];
                         }
                     }
                     if (spriteXFlip)

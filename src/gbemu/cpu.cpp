@@ -1,10 +1,19 @@
 #include "cpu.h"
 #include "cycletables.h"
 
+#include "ioports.h"
+#include "MemoryMap.h"
+#include "display.h"
 
-CPU::CPU(Memory *memory, IOPorts *ioPorts, Display *display)
+#include <memory>
+#include <stdint.h>
+
+
+CPU::CPU(std::shared_ptr<MemoryMap> memoryMap,
+         std::shared_ptr<IOPorts> ioPorts,
+         std::shared_ptr<Display> display)
 {
-    this->memory = memory;
+    this->memoryMap = memoryMap;
     this->ioPorts = ioPorts;
     this->display = display;
     this->resetCPU();
@@ -31,14 +40,14 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
         if ((registers.SP < 0xA000) || ((registers.SP >= 0xFEA0) && (registers.SP < 0xFF80)) || (registers.SP == 0xFFFF))
             int j = 0;
 
-        opcode = memory->readByte(registers.PC);
+        opcode = memoryMap->readByte(registers.PC);
         clockCyclesExecuted = clockCyclesTable[opcode];
 
 
         if (stopped == false) {
             if (halted == false)
                 registers.PC++;
-            else if ((halted == true) && (interruptMasterEnableFlag == false) && ((ioPorts->getInterruptRequestFlags() & 0x1F) != 0x00) && ((memory->readByte(0xFFFF) & 0x1F) != 0x00)) {
+            else if ((halted == true) && (interruptMasterEnableFlag == false) && ((ioPorts->getInterruptRequestFlags() & 0x1F) != 0x00) && ((memoryMap->readByte(0xFFFF) & 0x1F) != 0x00)) {
                 halted = false; // This accounts for the HALT bug which stops the Program Counter from incrementing for one instruction
                                 // if HALT is used with IME disabled while there are interrupts enabled in IE and/or pending. Otherwise, the system halts permanently.
             }
@@ -257,7 +266,7 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
             case 0xCA: z80_jp_z(); break;
             // Handle the extended CB bit manipulation instructions.
             case 0xCB: {
-                cbOpcode = memory->readByte(registers.PC);
+                cbOpcode = memoryMap->readByte(registers.PC);
                 clockCyclesExecuted += clockCyclesCBTable[cbOpcode];
 
                 // Decode the opcode's instruction type, bits 7-6, where b00 = rotate/shift, b01 = test bit, b10 = reset bit, b11 = set bit
@@ -451,7 +460,7 @@ uint8_t CPU::getOpcode() const
 
 void CPU::handleInterrupts()
 {
-    uint8_t enabledInterruptFlags = memory->readByte(0xFFFF);
+    uint8_t enabledInterruptFlags = memoryMap->readByte(0xFFFF);
     uint8_t interruptRequestFlags = ioPorts->getInterruptRequestFlags();
 
     if (interruptMasterEnableFlag == true) {

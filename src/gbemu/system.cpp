@@ -1,20 +1,28 @@
 #include <iostream>
+#include <memory>
 
 #include "system.h"
 
 
-System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, uint8_t *saveData, uint32_t saveDataSize)
+System::System(std::unique_ptr<uint8_t[]> bootROM,
+               std::shared_ptr<uint8_t[]> romData,
+               uint32_t romSizeInBytes,
+               std::shared_ptr<uint8_t[]> saveData,
+               uint32_t saveDataSize)
 {
-    ioPorts = new IOPorts();
-    memory = new Memory(bootROM, romData, romSizeInBytes, ioPorts);
-    display = new Display(memory->getVideoRamPointer(), memory->getSpriteAttributeTablePointer(), ioPorts);
-    cpu = new CPU(memory, ioPorts, display);
+    ioPorts = std::make_shared<IOPorts>();
+    memoryMap = std::make_shared<MemoryMap>(std::move(bootROM), romData, romSizeInBytes, ioPorts);
+    display = std::make_shared<Display>(memoryMap->getVideoRamPointer(), memoryMap->getSpriteAttributeTablePointer(), ioPorts);
+    cpu = std::make_shared<CPU>(memoryMap, ioPorts, display);
 
     clockSpeed = 4194304;
     displayRefreshRate = 59.73; //59.72750056960583;
     cyclesPerFrame = (uint32_t)(clockSpeed / displayRefreshRate);
 
-    memory->setSaveRam(saveData, saveDataSize);
+    if (saveDataSize > 0)
+    {
+        memoryMap->setSaveRam(saveData, saveDataSize);
+    }
 
     isRunning = true;
 }
@@ -22,10 +30,6 @@ System::System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, uint
 
 System::~System()
 {
-    delete ioPorts;
-    delete memory;
-    delete cpu;
-    delete display;
 }
 
 
@@ -37,7 +41,7 @@ bool System::getIsRunning() const
 
 double System::getRefreshRate() const
 {
-    return 500;//displayRefreshRate;
+    return displayRefreshRate;
 }
 
 
@@ -47,7 +51,7 @@ std::string System::getSystemError() const
 }
 
 
-uint32_t *System::getFrameBuffer() const
+std::shared_ptr<uint32_t[]> System::getFrameBuffer() const
 {
     return display->getFrameBuffer();
 }
@@ -55,13 +59,13 @@ uint32_t *System::getFrameBuffer() const
 
 uint32_t System::getSaveDataSize() const
 {
-    return memory->getSaveRamSize();
+    return memoryMap->getSaveRamSize();
 }
 
 
-uint8_t *System::getSaveData() const
+std::shared_ptr<uint8_t[]> System::getSaveData() const
 {
-    return memory->getSaveRamPointer();
+    return memoryMap->getSaveRamPointer();
 }
 
 

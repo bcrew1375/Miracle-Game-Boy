@@ -1,6 +1,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include <memory>
 #include <stdint.h>
 
 #include <QWidget>
@@ -22,7 +23,7 @@ class Platform : public QWidget {
         bool isRunning;
 
         uint16_t getFPS() const;
-        uint32_t* getFrameBuffer() const;
+        std::shared_ptr <uint32_t[]> getFrameBuffer() const;
 
         void loadRomFile(QString romFilename, QByteArray bootROM, QByteArray romData);
         void pause();
@@ -40,7 +41,7 @@ class Platform : public QWidget {
         QString saveFilename;
         QString saveDirectory;
 
-        System* system;
+        std::unique_ptr<System> system;
 
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
         bool frameLocked;
@@ -51,8 +52,6 @@ class Platform : public QWidget {
         quint64 timeElapsed;
 
         uint16_t FPS;
-
-        const uint8_t* romBuffer;
         uint8_t romSizeInBytes;
 
     private slots:
