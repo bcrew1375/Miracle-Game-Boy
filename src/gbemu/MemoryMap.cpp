@@ -1,68 +1,80 @@
-#include <iostream>
-
-#include "memory.h"
+#include "MemoryMap.h"
 #include "ioports.h"
 
+#include <iostream>
+#include <memory>
+#include <string>
 
-Memory::Memory(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, IOPorts *ioPorts)
+
+MemoryMap::MemoryMap(std::unique_ptr<uint8_t[]> bootROM,
+                     std::shared_ptr<uint8_t[]> romData,
+                     uint32_t romSizeInBytes,
+                     std::shared_ptr<IOPorts> ioPorts)
 {
     // Ensure the ROM buffer contains at least 32,768 bytes (the minimum to fill both banks).
-    if (romSizeInBytes < 0x8000)
-        this->romData = new uint8_t[0x8000];
-    else
-        this->romData = new uint8_t[romSizeInBytes];
+    if (romSizeInBytes < MINIMUM_ROM_SIZE)
+    {
+        throw std::runtime_error("The loaded ROM file is " + std::to_string(romSizeInBytes) + \
+                                 "A Game Boy ROM should be between " + std::to_string(MINIMUM_ROM_SIZE) + \
+                                 " and " + std::to_string(MAXIMUM_ROM_SIZE));
+    }
 
     this->ioPorts = ioPorts;
+    this->bootROM = std::move(bootROM);
 
-    // Initialize all necessary memory space buffers.
+    spriteAttributeTable = std::make_shared<uint8_t[]>(SPRITE_ATTRIBUTE_TABLE_SIZE);
+    videoRam = std::make_shared<uint8_t[]>(VIDEO_RAM_SIZE);
 
-    memset(romBank0, 0xFF, 0x4000);
-    memset(romBank1, 0xFF, 0x4000);
-    memset(videoRam, 0x00, 0x2000);
-    //memset(externalRam, 0xFF, 0x1000);
-    memset(internalRamBank0, 0xFF, 0x1000);
-    memset(internalRamBank1, 0xFF, 0x1000);
-    memset(spriteAttributeTable, 0xFF, 0xA0);
-    memset(highRam, 0xFF, 0x7F);
+    romBank0 = std::make_unique<uint8_t[]>(ROM_BANK_SIZE);
+    romBank1 = std::make_unique<uint8_t[]>(ROM_BANK_SIZE);
+    videoRam = std::make_unique<uint8_t[]>(VIDEO_RAM_SIZE);
+    internalRamBank0 = std::make_unique<uint8_t[]>(INTERNAL_RAM_BANK_SIZE);
+    internalRamBank1 = std::make_unique<uint8_t[]>(INTERNAL_RAM_BANK_SIZE);
+    spriteAttributeTable = std::make_unique<uint8_t[]>(SPRITE_ATTRIBUTE_TABLE_SIZE);
+    highRam = std::make_unique<uint8_t[]>(HIGH_RAM_SIZE);
+
+    std::fill(videoRam.get(), videoRam.get() + VIDEO_RAM_SIZE, UNDEFINED_VALUE);
+    std::fill(internalRamBank0.get(), internalRamBank0.get() + INTERNAL_RAM_BANK_SIZE, UNDEFINED_VALUE);
+    std::fill(internalRamBank1.get(), internalRamBank1.get() + INTERNAL_RAM_BANK_SIZE, UNDEFINED_VALUE);
+    std::fill(spriteAttributeTable.get(), spriteAttributeTable.get() + SPRITE_ATTRIBUTE_TABLE_SIZE, UNDEFINED_VALUE);
+    std::fill(highRam.get(), highRam.get() + HIGH_RAM_SIZE, UNDEFINED_VALUE);
+
     interruptEnableFlags = 0x00;
 
-    std::memcpy(this->romData, romData, romSizeInBytes);
-
     // Load the first 32,768 bytes into the two 16 K ROM banks.
-    std::memcpy(romBank0, &this->romData[0x0000], 0x4000);
+    std::copy(romData.get(), romData.get() + ROM_BANK_SIZE, romBank0.get());
 
     externalHardwareType = romBank0[0x0147];
 
     // Determine if the cartridge uses extra hardware.
     if (externalHardwareType != 0x00)
-        memoryBankController = new MemoryBankController(this->romData);
+    {
+        memoryBankController = std::make_unique<MemoryBankController>(romData);
+    }
     else
     {
         memoryBankController = nullptr;
-        std::memcpy(romBank1, &this->romData[0x4000], 0x4000);
+        const auto romDataOffset = romData.get() + ROM_BANK_SIZE;
+        std::copy(romDataOffset, romDataOffset + ROM_BANK_SIZE, romBank1.get());
     }
 }
 
 
-Memory::~Memory()
+MemoryMap::~MemoryMap()
 {
-    delete romData;
-
-    if (memoryBankController != nullptr)
-        delete memoryBankController;
 }
 
 
-uint32_t Memory::getSaveRamSize() const
+uint32_t MemoryMap::getSaveRamSize() const
 {
     if (memoryBankController != nullptr)
-        return memoryBankController->getNumberOfRamBanks() * 8192;
+        return memoryBankController->getRamBankSize();
     else
         return 0;
 }
 
 
-uint8_t *Memory::getSaveRamPointer()
+std::shared_ptr<uint8_t[]> MemoryMap::getSaveRamPointer() const
 {
     if (memoryBankController != nullptr)
         return memoryBankController->getRamBankPointer();
@@ -71,19 +83,19 @@ uint8_t *Memory::getSaveRamPointer()
 }
 
 
-uint8_t *Memory::getSpriteAttributeTablePointer()
+std::shared_ptr<uint8_t[]> MemoryMap::getSpriteAttributeTablePointer() const
 {
     return spriteAttributeTable;
 }
 
 
-uint8_t *Memory::getVideoRamPointer()
+std::shared_ptr<uint8_t[]> MemoryMap::getVideoRamPointer() const
 {
     return videoRam;
 }
 
 
-uint8_t Memory::readByte(uint16_t address) const
+uint8_t MemoryMap::readByte(uint16_t address) const
 {
     if (address < 0x4000) {
         return romBank0[address];
@@ -100,7 +112,7 @@ uint8_t Memory::readByte(uint16_t address) const
     // External RAM should only be readable if the cartridge supports it. Otherwise, return an undefined value(0xFF).
     else if (address < 0xC000) {
         if (externalHardwareType != 0x00)
-            memoryBankController->readExternalRam(address);
+            return memoryBankController->readExternalRam(address);
         else
             return 0xFF;
     }
@@ -160,13 +172,13 @@ uint8_t Memory::readByte(uint16_t address) const
         return 0xFF;
 }
 
-void Memory::setSaveRam(uint8_t *saveRam, uint32_t saveSize)
+void MemoryMap::setSaveRam(std::shared_ptr<uint8_t[]> saveRam, uint32_t saveSize)
 {
     memoryBankController->setRamBanks(saveRam, saveSize);
 }
 
 
-void Memory::writeByte(uint16_t address, uint8_t data)
+void MemoryMap::writeByte(uint16_t address, uint8_t data)
 {
     if (address < 0x2000) {
         if (externalHardwareType != 0x00)
@@ -246,7 +258,7 @@ void Memory::writeByte(uint16_t address, uint8_t data)
                      {
                          spriteAttributeTable[i] = this->readByte((data << 8) + i);
                      }
-                     ioPorts->setDmaTransfer(data, spriteAttributeTable);
+                     ioPorts->setDmaTransfer(data, spriteAttributeTable.get());
         break;
         case 0xFF47: ioPorts->setBackgroundPalette(data); break;
         case 0xFF48: ioPorts->setSpritePalette0(data); break;

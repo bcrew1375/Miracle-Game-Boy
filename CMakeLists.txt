@@ -31,7 +31,7 @@ set(PROJECT_SOURCES
 	"${INCLUDE_DIR}/gbemu/cycletables.h"
 	"${INCLUDE_DIR}/gbemu/display.h"
 	"${INCLUDE_DIR}/gbemu/ioports.h"
-	"${INCLUDE_DIR}/gbemu/memory.h"
+	"include/gbemu/MemoryMap.h"
 	"${INCLUDE_DIR}/gbemu/memorybankcontroller.h"
 	"${INCLUDE_DIR}/gbemu/system.h"
 
@@ -46,7 +46,7 @@ set(PROJECT_SOURCES
 	"${SOURCE_DIR}/gbemu/instructionset.cpp"
 	"${SOURCE_DIR}/gbemu/instructionsetcb.cpp"
 	"${SOURCE_DIR}/gbemu/ioports.cpp"
-	"${SOURCE_DIR}/gbemu/memory.cpp"
+	"src/gbemu/MemoryMap.cpp"
 	"${SOURCE_DIR}/gbemu/memorybankcontroller.cpp"
 	"${SOURCE_DIR}/gbemu/system.cpp"
 

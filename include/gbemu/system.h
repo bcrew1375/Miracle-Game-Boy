@@ -6,6 +6,7 @@
 #include "display.h"
 #include "ioports.h"
 
+#include <memory>
 #include <stdint.h>
 #include <string>
 
@@ -13,7 +14,11 @@
 class System
 {
     public:
-        System(uint8_t *bootROM, uint8_t *romData, uint32_t romSizeInBytes, uint8_t *saveData, uint32_t saveDataSize);
+        System(std::unique_ptr<uint8_t[]> bootROM,
+               std::shared_ptr<uint8_t[]> romData,
+               uint32_t romSizeInBytes,
+               std::shared_ptr<uint8_t[]> saveData,
+               uint32_t saveDataSize);
         ~System();
 
         bool getIsRunning() const;
@@ -22,19 +27,19 @@ class System
 
         std::string getSystemError() const;
 
-        uint32_t* getFrameBuffer() const;
+        std::shared_ptr<uint32_t[]> getFrameBuffer() const;
         uint32_t getSaveDataSize() const;
 
-        uint8_t* getSaveData() const;
+        std::shared_ptr<uint8_t[]> getSaveData() const;
 
         void executeCycles();
         void setControllerInputs(bool *buttonInputs);
 
     private:
-        CPU* cpu;
-        Display* display;
-        IOPorts* ioPorts;
-        Memory* memory;
+        std::shared_ptr<CPU> cpu;
+        std::shared_ptr<Display> display;
+        std::shared_ptr<IOPorts> ioPorts;
+        std::shared_ptr<MemoryMap> memoryMap;
 
         bool isRunning;
 
