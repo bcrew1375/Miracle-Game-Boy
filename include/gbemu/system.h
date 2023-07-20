@@ -14,10 +14,10 @@
 class System
 {
     public:
-        System(std::unique_ptr<uint8_t[]> bootROM,
-               std::shared_ptr<uint8_t[]> romData,
+        System(std::unique_ptr<const uint8_t[]> bootROM,
+               std::unique_ptr<const uint8_t[]> romData,
                uint32_t romSizeInBytes,
-               std::shared_ptr<uint8_t[]> saveData,
+               std::unique_ptr<const uint8_t[]> saveData,
                uint32_t saveDataSize);
         ~System();
 
@@ -30,7 +30,7 @@ class System
         std::shared_ptr<uint32_t[]> getFrameBuffer() const;
         uint32_t getSaveDataSize() const;
 
-        std::shared_ptr<uint8_t[]> getSaveData() const;
+        std::shared_ptr<const uint8_t[]> getSaveData() const;
 
         void executeCycles();
         void setControllerInputs(bool *buttonInputs);

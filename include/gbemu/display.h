@@ -9,11 +9,11 @@
 class Display
 {
     public:
-        Display(std::shared_ptr<uint8_t[]> videoRam,
-                std::shared_ptr<uint8_t[]> spriteAttributeTable,
+        Display(std::shared_ptr<const uint8_t[]> videoRam,
+                std::shared_ptr<const uint8_t[]> spriteAttributeTable,
                 std::shared_ptr<IOPorts> ioPorts);
 
-        std::shared_ptr<uint32_t[]> getFrameBuffer();
+        std::shared_ptr<uint32_t[]> getFrameBuffer() const;
 
         void createScanline();
 
@@ -44,8 +44,8 @@ class Display
 
         std::shared_ptr<IOPorts> ioPorts;
 
-        std::shared_ptr<uint8_t[]> spriteAttributeTable;
-        std::shared_ptr<uint8_t[]> videoRam;
+        std::shared_ptr<const uint8_t[]> spriteAttributeTable;
+        std::shared_ptr<const uint8_t[]> videoRam;
         
         std::unique_ptr<uint8_t[]> backgroundTileMap;
         std::unique_ptr<uint8_t[]> backgroundWindowScanlineBuffer;

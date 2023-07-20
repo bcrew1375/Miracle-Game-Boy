@@ -4,11 +4,11 @@
 #include "memorybankcontroller.h"
 
 
-MemoryBankController::MemoryBankController(std::shared_ptr<uint8_t[]> romData)
+MemoryBankController::MemoryBankController(std::unique_ptr<const uint8_t[]> romData)
 {
-    this->romData = romData;
+    this->romData = std::move(romData);
 
-    romBank1 = std::make_shared<uint8_t[]>(ROM_BANK_SIZE);
+    romBank1 = std::make_unique<uint8_t[]>(ROM_BANK_SIZE);
     ramBank = std::make_shared<uint8_t[]>(MAX_RAM_BANK_SIZE);
 
     romBankSelected = 0x0001;
@@ -103,8 +103,12 @@ MemoryBankController::MemoryBankController(std::shared_ptr<uint8_t[]> romData)
         default: hasSwitchableRamBanks = false; break;
     }
 
-    auto romDataOffset = this->romData.get() + (romBankSelected * ROM_BANK_SIZE);
-    std::copy(romDataOffset, romDataOffset + ROM_BANK_SIZE, romBank1.get());
+    // It's necessary to copy to and move a non-const array to the const romBank array, since make_unique technically initializes the array.
+    const auto romDataBank1Offset = this->romData.get() + ROM_BANK_SIZE;
+
+    std::unique_ptr<uint8_t[]> romDataBank1Subset = std::make_unique<uint8_t[]>(ROM_BANK_SIZE);
+    std::copy(romDataBank1Offset, romDataBank1Offset + ROM_BANK_SIZE, romDataBank1Subset.get());
+    romBank1 = std::move(romDataBank1Subset);
 }
 
 
@@ -113,7 +117,7 @@ MemoryBankController::~MemoryBankController()
 }
 
 
-std::shared_ptr<uint8_t[]> MemoryBankController::getRamBankPointer()
+std::shared_ptr<const uint8_t[]> MemoryBankController::getRamBankArray() const
 {
     if (hasBatteryBackup == true)
     {
@@ -147,9 +151,9 @@ uint8_t MemoryBankController::readRomBank1(uint16_t address) const
 }
 
 
-void MemoryBankController::setRamBanks(std::shared_ptr<uint8_t[]> ramData, uint32_t ramSize)
+void MemoryBankController::setRamBanks(std::unique_ptr<const uint8_t[]> ramData, uint32_t ramSize)
 {
-    std::copy(ramData.get(), ramData.get() + MAX_RAM_BANK_SIZE, ramBank.get());
+    std::copy(ramData.get(), ramData.get() + RAM_BANK_SIZE, ramBank.get());
 }
 
 

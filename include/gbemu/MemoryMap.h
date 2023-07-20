@@ -11,19 +11,19 @@
 class MemoryMap
 {
     public:
-        MemoryMap(std::unique_ptr<uint8_t[]> bootROM,
-                  std::shared_ptr<uint8_t[]> romData,
+        MemoryMap(std::unique_ptr<const uint8_t[]> bootROM,
+                  std::unique_ptr<const uint8_t[]> romData,
                   uint32_t romSizeInBytes,
                   std::shared_ptr<IOPorts> ioPorts);
         ~MemoryMap();
 
         uint32_t getSaveRamSize() const;
-        std::shared_ptr<uint8_t[]> getSaveRamPointer() const;
-        std::shared_ptr<uint8_t[]> getSpriteAttributeTablePointer() const;
-        std::shared_ptr<uint8_t[]> getVideoRamPointer() const;
+        std::shared_ptr<const uint8_t[]> getSaveRamArray() const;
+        std::shared_ptr<const uint8_t[]> getSpriteAttributeTableArray() const;
+        std::shared_ptr<const uint8_t[]> getVideoRamArray() const;
         uint8_t readByte(uint16_t address) const;
 
-        void setSaveRam(std::shared_ptr<uint8_t[]> saveRam, uint32_t saveSize);
+        void setSaveRam(std::unique_ptr<const uint8_t[]> saveRam, uint32_t saveSize);
         void writeByte(uint16_t address, uint8_t data);
 
     private:
@@ -62,9 +62,9 @@ class MemoryMap
         std::unique_ptr<uint8_t[]> highRam;
         std::unique_ptr<uint8_t[]> internalRamBank0;
         std::unique_ptr<uint8_t[]> internalRamBank1;
-        std::unique_ptr<uint8_t[]> bootROM;
-        std::unique_ptr<uint8_t[]> romBank0;
-        std::unique_ptr<uint8_t[]> romBank1;
+        std::unique_ptr<const uint8_t[]> bootROM;
+        std::unique_ptr<const uint8_t[]> romBank0;
+        std::unique_ptr<const uint8_t[]> romBank1;
 
         std::shared_ptr<uint8_t[]> spriteAttributeTable;
         std::shared_ptr<uint8_t[]> videoRam;

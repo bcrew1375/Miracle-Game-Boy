@@ -2,7 +2,7 @@
 #define CYCLETABLES_H
 
 
-const uint8_t clockCyclesTable [] = {
+static const uint8_t clockCyclesTable [] = {
                                 4, 12,  8,  8,  4,  4,  8,  4, 20,  8,  8,  8,  4,  4,  8,  4,  // 0x0x
                                 4, 12,  8,  8,  4,  4,  8,  4, 12,  8,  8,  8,  4,  4,  8,  4,  // 0x1x
                                 8, 12,  8,  8,  4,  4,  8,  4,  8,  8,  8,  8,  4,  4,  8,  4,  // 0x2x
@@ -20,7 +20,7 @@ const uint8_t clockCyclesTable [] = {
                                12, 12,  8,  0,  0, 16,  8, 16, 16,  4, 16,  0,  0,  0,  8, 16,  // 0xEx
                                12, 12,  8,  4,  0, 16,  8, 16, 12,  8, 16,  4,  0,  0,  8, 16 };// 0xFx
 
-const uint8_t clockCyclesCBTable[] = {
+static const uint8_t clockCyclesCBTable[] = {
                                 8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,  // 0x00
                                 8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,  // 0x10
                                 8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,  // 0x20

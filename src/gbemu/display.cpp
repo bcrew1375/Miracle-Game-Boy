@@ -4,8 +4,8 @@
 #include "display.h"
 
 
-Display::Display(std::shared_ptr<uint8_t[]> videoRam,
-                 std::shared_ptr<uint8_t[]> spriteAttributeTable,
+Display::Display(std::shared_ptr<const uint8_t[]> videoRam,
+                 std::shared_ptr<const uint8_t[]> spriteAttributeTable,
                  std::shared_ptr<IOPorts> ioPorts)
 {
     this->videoRam = videoRam;
@@ -23,7 +23,7 @@ Display::Display(std::shared_ptr<uint8_t[]> videoRam,
 }
 
 
-std::shared_ptr<uint32_t[]> Display::getFrameBuffer()
+std::shared_ptr<uint32_t[]> Display::getFrameBuffer() const
 {
     return finalDisplayBuffer;
 }
@@ -72,7 +72,7 @@ void Display::convertTileData(uint16_t tileData, uint8_t palette, bool isSprite)
 }
 
 
-void Display::getBackgroundTileMap() //const
+void Display::getBackgroundTileMap()
 {
     switch (ioPorts->getLcdControl() & 0x08) {
     case 0x00: std::copy(videoRam.get() + 0x1800, videoRam.get() + 0x1800 + 0x400, backgroundTileMap.get()); break;
