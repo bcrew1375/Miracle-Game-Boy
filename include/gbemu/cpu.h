@@ -1,9 +1,9 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include "ioports.h"
+#include "IoPorts.h"
 #include "MemoryMap.h"
-#include "display.h"
+#include "Display.h"
 
 #include <memory>
 #include <stdint.h>
@@ -103,7 +103,7 @@ class CPU
         void z80_ldh_rega_addr8();
         void z80_ldi_rega_reghl_addr16();
         void z80_ldi_reghl_addr16_rega();
-        void z80_nop();
+        void z80_nop() const;
         void z80_pop_reg16(uint16_t *reg16);
         void z80_push_reg16(uint16_t *reg16);
         void z80_rega_and_dat8();

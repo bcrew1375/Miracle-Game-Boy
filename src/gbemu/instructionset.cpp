@@ -1,4 +1,4 @@
-#include "cpu.h"
+#include "Cpu.h"
 
 
 void CPU::z80_adc_rega_dat8()
@@ -682,7 +682,7 @@ void CPU::z80_ldi_reghl_addr16_rega()
 }
 
 
-void CPU::z80_nop()
+void CPU::z80_nop() const
 {
 
 }

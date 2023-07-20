@@ -23,32 +23,32 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(UI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ui)
 
 set(PROJECT_SOURCES
-	"${INCLUDE_DIR}/platform.h"
+	"include/Platform.h"
 	"${INCLUDE_DIR}/platformsmap.h"
-	"${INCLUDE_DIR}/mainwindow.h"
+	"include/MainWindow.h"
 
-	"${INCLUDE_DIR}/gbemu/cpu.h"
+	"include/gbemu/Cpu.h"
 	"${INCLUDE_DIR}/gbemu/cycletables.h"
-	"${INCLUDE_DIR}/gbemu/display.h"
-	"${INCLUDE_DIR}/gbemu/ioports.h"
+	"include/gbemu/Display.h"
+	"include/gbemu/IoPorts.h"
 	"include/gbemu/MemoryMap.h"
-	"${INCLUDE_DIR}/gbemu/memorybankcontroller.h"
-	"${INCLUDE_DIR}/gbemu/system.h"
+	"include/gbemu/MemoryBankController.h"
+	"include/gbemu/System.h"
 
 	"${INCLUDE_DIR}/opengl/opengl.h"
 
 	"${SOURCE_DIR}/main.cpp"
-	"${SOURCE_DIR}/mainwindow.cpp"
-	"${SOURCE_DIR}/platform.cpp"
+	"src/MainWindow.cpp"
+	"src/Platform.cpp"
 
-	"${SOURCE_DIR}/gbemu/cpu.cpp"
-	"${SOURCE_DIR}/gbemu/display.cpp"
+	"src/gbemu/Cpu.cpp"
+	"src/gbemu/Display.cpp"
 	"${SOURCE_DIR}/gbemu/instructionset.cpp"
 	"${SOURCE_DIR}/gbemu/instructionsetcb.cpp"
-	"${SOURCE_DIR}/gbemu/ioports.cpp"
+	"src/gbemu/IoPorts.cpp"
 	"src/gbemu/MemoryMap.cpp"
-	"${SOURCE_DIR}/gbemu/memorybankcontroller.cpp"
-	"${SOURCE_DIR}/gbemu/system.cpp"
+	"src/gbemu/MemoryBankController.cpp"
+	"src/gbemu/System.cpp"
 
 	"${SOURCE_DIR}/opengl/opengl.cpp"
 

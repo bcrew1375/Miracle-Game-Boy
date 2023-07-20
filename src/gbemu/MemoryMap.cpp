@@ -1,13 +1,13 @@
 #include "MemoryMap.h"
-#include "ioports.h"
+#include "IoPorts.h"
 
 #include <iostream>
 #include <memory>
 #include <string>
 
 
-MemoryMap::MemoryMap(std::unique_ptr<uint8_t[]> bootROM,
-                     std::shared_ptr<uint8_t[]> romData,
+MemoryMap::MemoryMap(std::unique_ptr<const uint8_t[]> bootROM,
+                     std::unique_ptr<const uint8_t[]> romData,
                      uint32_t romSizeInBytes,
                      std::shared_ptr<IOPorts> ioPorts)
 {
@@ -22,8 +22,8 @@ MemoryMap::MemoryMap(std::unique_ptr<uint8_t[]> bootROM,
     this->ioPorts = ioPorts;
     this->bootROM = std::move(bootROM);
 
-    spriteAttributeTable = std::make_shared<uint8_t[]>(SPRITE_ATTRIBUTE_TABLE_SIZE);
-    videoRam = std::make_shared<uint8_t[]>(VIDEO_RAM_SIZE);
+    spriteAttributeTable = std::make_unique<uint8_t[]>(SPRITE_ATTRIBUTE_TABLE_SIZE);
+    videoRam = std::make_unique<uint8_t[]>(VIDEO_RAM_SIZE);
 
     romBank0 = std::make_unique<uint8_t[]>(ROM_BANK_SIZE);
     romBank1 = std::make_unique<uint8_t[]>(ROM_BANK_SIZE);
@@ -42,20 +42,27 @@ MemoryMap::MemoryMap(std::unique_ptr<uint8_t[]> bootROM,
     interruptEnableFlags = 0x00;
 
     // Load the first 32,768 bytes into the two 16 K ROM banks.
-    std::copy(romData.get(), romData.get() + ROM_BANK_SIZE, romBank0.get());
+
+    // It's necessary to copy to and move a non-const array to the const romBank arrays, since make_unique technically initializes the array.
+    std::unique_ptr<uint8_t[]> romDataBank0Subset = std::make_unique<uint8_t[]>(ROM_BANK_SIZE);
+    std::copy(romData.get(), romData.get() + ROM_BANK_SIZE, romDataBank0Subset.get());
+    romBank0 = std::move(romDataBank0Subset);
 
     externalHardwareType = romBank0[0x0147];
 
     // Determine if the cartridge uses extra hardware.
     if (externalHardwareType != 0x00)
     {
-        memoryBankController = std::make_unique<MemoryBankController>(romData);
+        memoryBankController = std::make_unique<MemoryBankController>(std::move(romData));
     }
     else
     {
         memoryBankController = nullptr;
-        const auto romDataOffset = romData.get() + ROM_BANK_SIZE;
-        std::copy(romDataOffset, romDataOffset + ROM_BANK_SIZE, romBank1.get());
+        const auto romDataBank1Offset = romData.get() + ROM_BANK_SIZE;
+
+        std::unique_ptr<uint8_t[]> romDataBank1Subset = std::make_unique<uint8_t[]>(ROM_BANK_SIZE);
+        std::copy(romDataBank1Offset, romDataBank1Offset + ROM_BANK_SIZE, romDataBank1Subset.get());
+        romBank1 = std::move(romDataBank1Subset);
     }
 }
 
@@ -74,22 +81,22 @@ uint32_t MemoryMap::getSaveRamSize() const
 }
 
 
-std::shared_ptr<uint8_t[]> MemoryMap::getSaveRamPointer() const
+std::shared_ptr<const uint8_t[]> MemoryMap::getSaveRamArray() const
 {
     if (memoryBankController != nullptr)
-        return memoryBankController->getRamBankPointer();
+        return memoryBankController->getRamBankArray();
     else
         return nullptr;
 }
 
 
-std::shared_ptr<uint8_t[]> MemoryMap::getSpriteAttributeTablePointer() const
+std::shared_ptr<const uint8_t[]> MemoryMap::getSpriteAttributeTableArray() const
 {
     return spriteAttributeTable;
 }
 
 
-std::shared_ptr<uint8_t[]> MemoryMap::getVideoRamPointer() const
+std::shared_ptr<const uint8_t[]> MemoryMap::getVideoRamArray() const
 {
     return videoRam;
 }
@@ -172,9 +179,9 @@ uint8_t MemoryMap::readByte(uint16_t address) const
         return 0xFF;
 }
 
-void MemoryMap::setSaveRam(std::shared_ptr<uint8_t[]> saveRam, uint32_t saveSize)
+void MemoryMap::setSaveRam(std::unique_ptr<const uint8_t[]> saveRam, uint32_t saveSize)
 {
-    memoryBankController->setRamBanks(saveRam, saveSize);
+    memoryBankController->setRamBanks(std::move(saveRam), saveSize);
 }
 
 
@@ -254,7 +261,7 @@ void MemoryMap::writeByte(uint16_t address, uint8_t data)
         case 0xFF43: ioPorts->setScrollX(data); break;
         case 0xFF44: ioPorts->setLcdYCoordinate(); break;
         case 0xFF45: ioPorts->setLcdYCompare(data); break;
-        case 0xFF46: for (int i = 0x00; i < 0xA0; i++)
+        case 0xFF46: std:for (int i = 0x00; i < 0xA0; i++)
                      {
                          spriteAttributeTable[i] = this->readByte((data << 8) + i);
                      }

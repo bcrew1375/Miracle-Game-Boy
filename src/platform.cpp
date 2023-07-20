@@ -56,9 +56,10 @@ void Platform::loadRomFile(QString romFilename, QByteArray bootROM, QByteArray r
 
     try
     {
+        // Since QByteArray ownership can't be transferred, it's necessary to copy to new arrays.
         std::unique_ptr bootROMArray = std::make_unique<uint8_t[]>(bootROM.size());
-        std::shared_ptr romDataArray = std::make_shared<uint8_t[]>(romData.size());
-        std::shared_ptr saveDataArray = std::make_shared<uint8_t[]>(saveData.size());
+        std::unique_ptr romDataArray = std::make_unique<uint8_t[]>(romData.size());
+        std::unique_ptr saveDataArray = std::make_unique<uint8_t[]>(saveData.size());
 
         std::copy(bootROM.data(), bootROM.data() + bootROM.size(), bootROMArray.get());
         std::copy(romData.data(), romData.data() + romData.size(), romDataArray.get());
@@ -66,9 +67,9 @@ void Platform::loadRomFile(QString romFilename, QByteArray bootROM, QByteArray r
 
         system = std::make_unique<System>(
             std::move(bootROMArray),
-            romDataArray,
+            std::move(romDataArray),
             romData.size(),
-            saveDataArray,
+            std::move(saveDataArray),
             saveData.length());
     }
     catch (std::exception e)
@@ -111,8 +112,6 @@ void Platform::setSystemType() {
 
 
 void Platform::start() {
-    nanoSecondsPerFrame = 1000000000 / system->getRefreshRate();
-    milliSecondsPerFrame = (double)nanoSecondsPerFrame / 1000000;
     timeElapsed = 0;
 
     isRunning = true;
@@ -131,7 +130,7 @@ void Platform::writeSaveRamToFile()
     qint32 saveDataSize;
 
     saveDataSize = system->getSaveDataSize();
-    saveData = saveData.fromRawData(reinterpret_cast<char *>(system->getSaveData().get()), saveDataSize);
+    saveData = saveData.fromRawData(reinterpret_cast<const char *>(system->getSaveData().get()), saveDataSize);
 
     if (!directory->exists(directory->currentPath() + saveDirectory))
         directory->mkdir(directory->currentPath() + saveDirectory);

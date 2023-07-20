@@ -4,10 +4,11 @@
 #include <memory>
 #include <stdint.h>
 
+#include "gbemu/System.h"
+
 #include <QWidget>
 #include <QElapsedTimer>
 
-#include "gbemu/system.h"
 
 class Platform : public QWidget {
     Q_OBJECT
@@ -46,9 +47,9 @@ class Platform : public QWidget {
         bool buttonInputs[8] = { false, false, false, false, false, false, false, false };
         bool frameLocked;
 
-        double milliSecondsPerFrame;
+        static constexpr quint64 nanoSecondsPerFrame = 1000000000 / System::displayRefreshRate;
+        static constexpr double milliSecondsPerFrame = (double)nanoSecondsPerFrame / 1000000;
 
-        quint64 nanoSecondsPerFrame;
         quint64 timeElapsed;
 
         uint16_t FPS;

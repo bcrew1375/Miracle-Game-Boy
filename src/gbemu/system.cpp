@@ -1,27 +1,27 @@
+#include "System.h"
+#include "IoPorts.h"
+#include "Cpu.h"
+#include "MemoryMap.h"
+#include "Display.h"
+
 #include <iostream>
 #include <memory>
 
-#include "system.h"
 
-
-System::System(std::unique_ptr<uint8_t[]> bootROM,
-               std::shared_ptr<uint8_t[]> romData,
+System::System(std::unique_ptr<const uint8_t[]> bootROM,
+               std::unique_ptr<const uint8_t[]> romData,
                uint32_t romSizeInBytes,
-               std::shared_ptr<uint8_t[]> saveData,
+               std::unique_ptr<const uint8_t[]> saveData,
                uint32_t saveDataSize)
 {
     ioPorts = std::make_shared<IOPorts>();
-    memoryMap = std::make_shared<MemoryMap>(std::move(bootROM), romData, romSizeInBytes, ioPorts);
-    display = std::make_shared<Display>(memoryMap->getVideoRamPointer(), memoryMap->getSpriteAttributeTablePointer(), ioPorts);
-    cpu = std::make_shared<CPU>(memoryMap, ioPorts, display);
-
-    clockSpeed = 4194304;
-    displayRefreshRate = 59.73; //59.72750056960583;
-    cyclesPerFrame = (uint32_t)(clockSpeed / displayRefreshRate);
+    memoryMap = std::make_shared<MemoryMap>(std::move(bootROM), std::move(romData), romSizeInBytes, ioPorts);
+    display = std::make_shared<Display>(memoryMap->getVideoRamArray(), memoryMap->getSpriteAttributeTableArray(), ioPorts);
+    cpu = std::make_shared<CPU>(memoryMap, ioPorts, display); 
 
     if (saveDataSize > 0)
     {
-        memoryMap->setSaveRam(saveData, saveDataSize);
+        memoryMap->setSaveRam(std::move(saveData), saveDataSize);
     }
 
     isRunning = true;
@@ -33,15 +33,9 @@ System::~System()
 }
 
 
-bool System::getIsRunning() const
+const bool System::getIsRunning() const
 {
     return isRunning;
-}
-
-
-double System::getRefreshRate() const
-{
-    return displayRefreshRate;
 }
 
 
@@ -63,9 +57,9 @@ uint32_t System::getSaveDataSize() const
 }
 
 
-std::shared_ptr<uint8_t[]> System::getSaveData() const
+std::shared_ptr<const uint8_t[]> System::getSaveData() const
 {
-    return memoryMap->getSaveRamPointer();
+    return memoryMap->getSaveRamArray();
 }
 
 
