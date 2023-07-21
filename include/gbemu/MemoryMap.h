@@ -1,11 +1,11 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "IoPorts.h"
-#include "MemoryBankController.h"
-
 #include <memory>
 #include <stdint.h>
+
+class MemoryBankController;
+class IOPorts;
 
 
 class MemoryMap
@@ -13,7 +13,7 @@ class MemoryMap
     public:
         MemoryMap(std::unique_ptr<const uint8_t[]> bootROM,
                   std::unique_ptr<const uint8_t[]> romData,
-                  uint32_t romSizeInBytes,
+                  const uint32_t romSizeInBytes,
                   std::shared_ptr<IOPorts> ioPorts);
         ~MemoryMap();
 
@@ -27,34 +27,37 @@ class MemoryMap
         void writeByte(uint16_t address, uint8_t data);
 
     private:
-        static constexpr uint32_t MINIMUM_ROM_SIZE           = 0x8000; // Minimum size of 32,768 bytes.
-        static constexpr uint32_t MAXIMUM_ROM_SIZE           = 0x200000; // Maximum size of 2,097,152 bytes.
+        static constexpr uint32_t MINIMUM_ROM_SIZE              = 0x8000; // Minimum size of 32,768 bytes.
+        static constexpr uint32_t MAXIMUM_ROM_SIZE              = 0x200000; // Maximum size of 2,097,152 bytes.
 
-        static constexpr uint32_t ROM_BANK_SIZE              = 0x4000;
-        static constexpr uint32_t VIDEO_RAM_SIZE             = 0x2000;
-        static constexpr uint32_t INTERNAL_RAM_BANK_SIZE     = 0x1000;
-        static constexpr uint32_t SPRITE_ATTRIBUTE_TABLE_SIZE = 0xA0;
-        static constexpr uint32_t HIGH_RAM_SIZE              = 0x7F;
+        static constexpr uint32_t ROM_BANK_SIZE                 = 0x4000;
+        static constexpr uint32_t VIDEO_RAM_SIZE                = 0x2000;
+        static constexpr uint32_t INTERNAL_RAM_BANK_SIZE        = 0x1000;
+        static constexpr uint32_t SPRITE_ATTRIBUTE_TABLE_SIZE   = 0xA0;
+        static constexpr uint32_t HIGH_RAM_SIZE                 = 0x7F;
 
         static constexpr uint32_t ROM_BANK_0_OFFSET             = 0x0000;
         static constexpr uint32_t ROM_BANK_1_OFFSET             = 0x4000;
-        static constexpr uint32_t VIDEO_RAM_OFFSET             = 0x8000;
+        static constexpr uint32_t VIDEO_RAM_OFFSET              = 0x8000;
         static constexpr uint32_t EXTERNAL_RAM_BANK_OFFSET      = 0xA000;
-        static constexpr uint32_t INTERNAL_RAM_BANK_0_OFFSET     = 0xC000;
-        static constexpr uint32_t INTERNAL_RAM_BANK_1_OFFSET     = 0xD000;
-        static constexpr uint32_t MIRROR_RAM_BANK_0_OFFSET       = 0xE000;
-        static constexpr uint32_t MIRROR_RAM_BANK_1_OFFSET       = 0xF000;
+        static constexpr uint32_t INTERNAL_RAM_BANK_0_OFFSET    = 0xC000;
+        static constexpr uint32_t INTERNAL_RAM_BANK_1_OFFSET    = 0xD000;
+        static constexpr uint32_t MIRROR_RAM_BANK_0_OFFSET      = 0xE000;
+        static constexpr uint32_t MIRROR_RAM_BANK_1_OFFSET      = 0xF000;
         static constexpr uint32_t SPRITE_ATTRIBUTE_TABLE_OFFSET = 0xFE00;
         static constexpr uint32_t UNUSABLE_MEMORY_SPACE_OFFSET  = 0xFEA0;
-        static constexpr uint32_t IO_PORTS_OFFSET              = 0xFF00;
-        static constexpr uint32_t HIGH_RAM_OFFSET              = 0xFF80;
+        static constexpr uint32_t IO_PORTS_OFFSET               = 0xFF00;
+        static constexpr uint32_t HIGH_RAM_OFFSET               = 0xFF80;
         static constexpr uint32_t INTERRUPT_ENABLE_FLAGS_OFFSET = 0xFFFF;
+
+        static constexpr uint32_t LOW_RAM_BANK_REGISTER_OFFSET  = 0x2000;
+        static constexpr uint32_t HIGH_RAM_BANK_REGISTER_OFFSET = 0x4000;
+        static constexpr uint32_t BANKING_MODE_REGISTER_OFFSET  = 0x4000;
 
         static constexpr uint8_t UNDEFINED_VALUE = 0xFF;
 
-
-        uint8_t interruptEnableFlags;
         uint8_t externalHardwareType;
+        uint8_t interruptEnableFlags;
 
         std::shared_ptr<IOPorts> ioPorts;
         std::unique_ptr<MemoryBankController> memoryBankController;

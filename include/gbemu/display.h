@@ -1,10 +1,10 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#include "IoPorts.h"
-
 #include <stdint.h>
 #include <memory>
+
+class IOPorts;
 
 
 class Display

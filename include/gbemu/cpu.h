@@ -1,12 +1,12 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include "IoPorts.h"
-#include "MemoryMap.h"
-#include "Display.h"
-
 #include <memory>
 #include <stdint.h>
+
+class MemoryMap;
+class IOPorts;
+class Display;
 
 
 class CPU

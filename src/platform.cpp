@@ -1,3 +1,5 @@
+#include "Platform.h"
+
 #include <iostream>
 #include <memory>
 
@@ -8,8 +10,6 @@
 #include <QKeyEvent>
 #include <QTimer>
 #include <QMessageBox>
-
-#include "platform.h"
 
 
 Platform::Platform(int systemType) {

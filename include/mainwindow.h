@@ -1,12 +1,13 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "Platform.h"
 #include "opengl/opengl.h"
 #include "ui_MainWindow.h"
 
 #include <memory>
 #include <QMainWindow>
+
+class Platform;
 
 
 QT_BEGIN_NAMESPACE

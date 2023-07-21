@@ -12,9 +12,9 @@ class MemoryBankController
         ~MemoryBankController();
 
         std::shared_ptr<const uint8_t[]> getRamBankArray() const;
-        uint8_t getRamBankSize() const;
-        uint8_t readExternalRam(uint16_t address) const;
-        uint8_t readRomBank1(uint16_t address) const;
+        const uint32_t getRamBankSize() const;
+        const uint8_t readExternalRam(uint16_t address) const;
+        const uint8_t readRomBank1(uint16_t address) const;
 
         void setRamBanks(std::unique_ptr<const uint8_t[]> ramData, uint32_t ramSize);
         void writeRamEnableRegister(uint8_t data);

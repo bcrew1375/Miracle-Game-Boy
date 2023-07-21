@@ -10,14 +10,14 @@
 
 System::System(std::unique_ptr<const uint8_t[]> bootROM,
                std::unique_ptr<const uint8_t[]> romData,
-               uint32_t romSizeInBytes,
+               const uint32_t romSizeInBytes,
                std::unique_ptr<const uint8_t[]> saveData,
-               uint32_t saveDataSize)
+               const uint32_t saveDataSize)
 {
     ioPorts = std::make_shared<IOPorts>();
     memoryMap = std::make_shared<MemoryMap>(std::move(bootROM), std::move(romData), romSizeInBytes, ioPorts);
     display = std::make_shared<Display>(memoryMap->getVideoRamArray(), memoryMap->getSpriteAttributeTableArray(), ioPorts);
-    cpu = std::make_shared<CPU>(memoryMap, ioPorts, display); 
+    cpu = std::make_unique<CPU>(memoryMap, ioPorts, display); 
 
     if (saveDataSize > 0)
     {

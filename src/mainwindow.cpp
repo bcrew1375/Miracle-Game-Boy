@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+#include "Platform.h"
 #include "platformsmap.h"
 
 #include <memory>
