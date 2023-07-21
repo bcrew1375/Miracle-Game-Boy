@@ -56,7 +56,7 @@ set(PROJECT_SOURCES
 )
 
 # Add source to this project's executable.
-add_executable(Miracle-Game-Boy ${PROJECT_SOURCES})
+add_executable(Miracle-Game-Boy ${PROJECT_SOURCES} "include/gbemu/bitmanipulation.h")
 
 set_target_properties(Miracle-Game-Boy PROPERTIES AUTOUIC_SEARCH_PATHS ${UI_DIR})
 target_include_directories(Miracle-Game-Boy PRIVATE ${INCLUDE_DIR} ${INCLUDE_DIR}/gbemu ${INCLUDE_DIR}/opengl ${UI_DIR})

@@ -1,5 +1,6 @@
 #include "Display.h"
 #include "IoPorts.h"
+#include "bitmanipulation.h"
 
 #include <iostream>
 #include <memory>
@@ -62,14 +63,14 @@ void Display::convertTileData(uint16_t tileData, uint8_t palette, bool isSprite)
     if (isSprite == true)
         paletteColors[0] = 0xFF;
 
-    tileLineBuffer[0] = paletteColors[((tileData & 0x8000) >> 14) + ((tileData & 0x0080) >> 7)];
-    tileLineBuffer[1] = paletteColors[((tileData & 0x4000) >> 13) + ((tileData & 0x0040) >> 6)];
-    tileLineBuffer[2] = paletteColors[((tileData & 0x2000) >> 12) + ((tileData & 0x0020) >> 5)];
-    tileLineBuffer[3] = paletteColors[((tileData & 0x1000) >> 11) + ((tileData & 0x0010) >> 4)];
-    tileLineBuffer[4] = paletteColors[((tileData & 0x0800) >> 10) + ((tileData & 0x0008) >> 3)];
-    tileLineBuffer[5] = paletteColors[((tileData & 0x0400) >>  9) + ((tileData & 0x0004) >> 2)];
-    tileLineBuffer[6] = paletteColors[((tileData & 0x0200) >>  8) + ((tileData & 0x0002) >> 1)];
-    tileLineBuffer[7] = paletteColors[((tileData & 0x0100) >>  7) + ((tileData & 0x0001)     )];
+    tileLineBuffer[0] = paletteColors[((tileData & Bits::BIT_15_ON) >> 14) + ((tileData & Bits::BIT_7_ON) >> 7)];
+    tileLineBuffer[1] = paletteColors[((tileData & Bits::BIT_14_ON) >> 13) + ((tileData & Bits::BIT_6_ON) >> 6)];
+    tileLineBuffer[2] = paletteColors[((tileData & Bits::BIT_13_ON) >> 12) + ((tileData & Bits::BIT_5_ON) >> 5)];
+    tileLineBuffer[3] = paletteColors[((tileData & Bits::BIT_12_ON) >> 11) + ((tileData & Bits::BIT_4_ON) >> 4)];
+    tileLineBuffer[4] = paletteColors[((tileData & Bits::BIT_11_ON) >> 10) + ((tileData & Bits::BIT_3_ON) >> 3)];
+    tileLineBuffer[5] = paletteColors[((tileData & Bits::BIT_10_ON) >>  9) + ((tileData & Bits::BIT_2_ON) >> 2)];
+    tileLineBuffer[6] = paletteColors[((tileData & Bits::BIT_9_ON ) >>  8) + ((tileData & Bits::BIT_1_ON) >> 1)];
+    tileLineBuffer[7] = paletteColors[((tileData & Bits::BIT_8_ON ) >>  7) + ((tileData & Bits::BIT_0_ON)     )];
 }
 
 
@@ -93,11 +94,11 @@ void Display::getBackgroundWindowScanline()
     uint8_t scrollXOffset = ioPorts->getScrollX();
     uint8_t scrollYOffset = ioPorts->getScrollY();
 
-    uint8_t tileDataOffsetX = scrollXOffset % 8;
-    uint8_t tileDataOffsetY = (currentLcdYCoordinate + scrollYOffset) % 8;
+    uint8_t tileDataOffsetX = scrollXOffset % TILE_WIDTH;
+    uint8_t tileDataOffsetY = (currentLcdYCoordinate + scrollYOffset) % TILE_HEIGHT;
     uint8_t tileNumber;
-    uint8_t tileNumberOffsetX = (uint8_t)(scrollXOffset / 8);
-    uint8_t tileNumberOffsetY = (uint8_t)((currentLcdYCoordinate + scrollYOffset) / 8) % 32;
+    uint8_t tileNumberOffsetX = (uint8_t)(scrollXOffset / TILE_WIDTH);
+    uint8_t tileNumberOffsetY = (uint8_t)((currentLcdYCoordinate + scrollYOffset) / TILE_HEIGHT) % BACKGROUND_TILE_MAP_HEIGHT;
 
     int16_t windowXOffset = ioPorts->getWindowX() - 7;
     int16_t windowYOffset = ioPorts->getWindowY();
@@ -106,9 +107,9 @@ void Display::getBackgroundWindowScanline()
     //ioPorts->setLcdControl(ioPorts->getLcdControl() & 0xFE);
 
     // Check the background and window are enabled before drawing.
-    if (ioPorts->getLcdControl() & 0x01)
+    if (ioPorts->getLcdControl() & Bits::BIT_0_ON)
     {
-        switch (ioPorts->getLcdControl() & 0x10)
+        switch (ioPorts->getLcdControl() & Bits::BIT_4_ON)
         {
         case 0x00: tileDataPointerBase = 0x1000; break;
         case 0x10: tileDataPointerBase = 0x0000; break;
@@ -120,15 +121,15 @@ void Display::getBackgroundWindowScanline()
         for (uint8_t mapX = 0; mapX < 21; mapX++)
         {
             // Modulation of the X and Y values is necessary for map wrapping.
-            tileNumber = backgroundTileMap[((mapX + tileNumberOffsetX) % 32) + (tileNumberOffsetY * 32)];
+            tileNumber = backgroundTileMap[((mapX + tileNumberOffsetX) % BACKGROUND_TILE_MAP_WIDTH) + (tileNumberOffsetY * BACKGROUND_TILE_MAP_HEIGHT)];
 
             if (tileDataPointerBase == 0x0000)
-                convertTileData(videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2)] +
-                               (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8),
+                convertTileData(videoRam[tileDataPointerBase + (tileNumber * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2)] +
+                               (videoRam[tileDataPointerBase + (tileNumber * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2) + 1] << 8),
                                 backgroundPalette, false);
             else
-                convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2)] +
-                               (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8),
+                convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2)] +
+                               (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2) + 1] << 8),
                                 backgroundPalette, false);
 
             for (int x = 0; x < 8; x++)
@@ -139,7 +140,7 @@ void Display::getBackgroundWindowScanline()
             }
         }
 
-        if ((currentLcdYCoordinate == 0) & ((ioPorts->getLcdStatus() & 0x03) != 0x01))
+        if ((currentLcdYCoordinate == 0) && ((ioPorts->getLcdStatus() & (Bits::BIT_0_ON | Bits::BIT_1_ON)) != Bits::BIT_0_ON))
             windowLineCounter = 0;
 
         // Disable window for testing.
@@ -148,7 +149,7 @@ void Display::getBackgroundWindowScanline()
         // The window has an additional enable bit. Check it and that the window is in the viewport before drawing.
         if ((ioPorts->getLcdControl() & 0x20) && (currentLcdYCoordinate >= windowYOffset) && (windowXOffset < 160))
         {
-            switch (ioPorts->getLcdControl() & 0x40)
+            switch (ioPorts->getLcdControl() & Bits::BIT_6_ON)
             {
             case 0x00: windowTileMapOffset = 0x1800; break;
             case 0x40: windowTileMapOffset = 0x1C00; break;
@@ -156,24 +157,24 @@ void Display::getBackgroundWindowScanline()
             }
 
 
-            tileNumberOffsetY = windowLineCounter / 8;
-            tileDataOffsetY = windowLineCounter % 8;
+            tileNumberOffsetY = windowLineCounter / TILE_HEIGHT;
+            tileDataOffsetY = windowLineCounter % TILE_HEIGHT;
 
 
-            for (int16_t windowX = windowXOffset; windowX < 160; windowX += 8)
+            for (int16_t windowX = windowXOffset; windowX < 160; windowX += TILE_WIDTH)
             {
-                tileNumber = videoRam[windowTileMapOffset + ((windowX - windowXOffset) / 8) + (tileNumberOffsetY * 32)];
+                tileNumber = videoRam[windowTileMapOffset + ((windowX - windowXOffset) / TILE_WIDTH) + (tileNumberOffsetY * BACKGROUND_TILE_MAP_HEIGHT)];
 
                 if (tileDataPointerBase == 0x0000)
-                    convertTileData(videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2)] +
-                                   (videoRam[tileDataPointerBase + (tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8),
+                    convertTileData(videoRam[tileDataPointerBase + (tileNumber * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2)] +
+                                   (videoRam[tileDataPointerBase + (tileNumber * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2) + 1] << 8),
                                     backgroundPalette, false);
                 else
-                    convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2)] +
-                                   (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * 16) + (tileDataOffsetY * 2) + 1] << 8),
+                    convertTileData(videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2)] +
+                                   (videoRam[tileDataPointerBase + ((int8_t)(tileNumber) * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2) + 1] << 8),
                                     backgroundPalette, false);
 
-                for (uint8_t x = 0; x < 8; x++)
+                for (uint8_t x = 0; x < TILE_WIDTH; x++)
                 {
                     // Only draw pixels that are in the viewport.
                     if (((x + windowX) < 160) && ((x + windowX) >= 0))
@@ -186,7 +187,7 @@ void Display::getBackgroundWindowScanline()
     }
     else
     {
-        std::fill(finalizedScanlineBuffer.get(), finalizedScanlineBuffer.get() + 160, backgroundPalette & 0x03);
+        std::fill(finalizedScanlineBuffer.get(), finalizedScanlineBuffer.get() + 160, backgroundPalette & (Bits::BIT_0_ON | Bits::BIT_1_ON));
     }
 }
 
@@ -201,10 +202,10 @@ void Display::getSpriteScanline()
     int16_t spriteYPosition;
     int16_t sprites[10][4];
 
-    uint8_t backgroundPaletteColorIndex0 = ioPorts->getBackgroundPalette() & 0x03; // Necessary for background/window prioritization.
+    uint8_t backgroundPaletteColorIndex0 = ioPorts->getBackgroundPalette() & (Bits::BIT_0_ON | Bits::BIT_1_ON); // Necessary for background/window prioritization.
     uint8_t currentLcdYCoordinate = ioPorts->getLcdYCoordinate();
     uint8_t spriteCount = 0;
-    uint8_t spriteHeight = 8 << ((ioPorts->getLcdControl() & 0x04) >> 2); // Get the global sprite tile height bit. 0 = 8, 1 = 16.
+    uint8_t spriteHeight = 8 << ((ioPorts->getLcdControl() & Bits::BIT_2_ON) >> 2); // Get the global sprite tile height bit. 0 = 8, 1 = 16.
     uint8_t spritePalette;
     uint8_t tileDataOffsetX;
     uint8_t tileDataOffsetY;
@@ -215,19 +216,19 @@ void Display::getSpriteScanline()
     //ioPorts->setLcdControl(ioPorts->getLcdControl() & 0xFD);
 
     // Only draw if sprites are enabled.
-    if (ioPorts->getLcdControl() & 0x02)
+    if (ioPorts->getLcdControl() & Bits::BIT_1_ON)
     {
         for (int spriteNumber = 0; spriteNumber < 40; spriteNumber++)
         {
-            spriteYPosition = spriteAttributeTable[spriteNumber * 4] - 16;
+            spriteYPosition = spriteAttributeTable[spriteNumber * SPRITE_ATTRIBUTE_BYTE_WIDTH] - 16;
 
             if ((currentLcdYCoordinate >= spriteYPosition) && (currentLcdYCoordinate < (spriteYPosition + spriteHeight)))
             {
                 // Gather all sprite attributes.
                 sprites[spriteCount][0] = spriteYPosition;
-                sprites[spriteCount][1] = spriteAttributeTable[(spriteNumber * 4) + 1];
-                sprites[spriteCount][2] = spriteAttributeTable[(spriteNumber * 4) + 2];
-                sprites[spriteCount][3] = spriteAttributeTable[(spriteNumber * 4) + 3];
+                sprites[spriteCount][1] = spriteAttributeTable[(spriteNumber * SPRITE_ATTRIBUTE_BYTE_WIDTH) + 1];
+                sprites[spriteCount][2] = spriteAttributeTable[(spriteNumber * SPRITE_ATTRIBUTE_BYTE_WIDTH) + 2];
+                sprites[spriteCount][3] = spriteAttributeTable[(spriteNumber * SPRITE_ATTRIBUTE_BYTE_WIDTH) + 3];
 
                 spriteCount++;
             }
@@ -242,14 +243,14 @@ void Display::getSpriteScanline()
             spriteYPosition = sprites[spriteNumber][0];
             spriteXPosition = sprites[spriteNumber][1];
             tileNumber = sprites[spriteNumber][2];
-            if (spriteHeight == 16)
+            if (spriteHeight == TILE_HEIGHT_TALL)
                 tileNumber &= 0xFE;
 
 
-            backgroundWindowPriority = sprites[spriteNumber][3] & 0x80;
-            spriteYFlip = sprites[spriteNumber][3] & 0x40;
-            spriteXFlip = sprites[spriteNumber][3] & 0x20;
-            switch (sprites[spriteNumber][3] & 0x10) {
+            backgroundWindowPriority = sprites[spriteNumber][3] & Bits::BIT_7_ON;
+            spriteYFlip = sprites[spriteNumber][3] & Bits::BIT_6_ON;
+            spriteXFlip = sprites[spriteNumber][3] & Bits::BIT_5_ON;
+            switch (sprites[spriteNumber][3] & Bits::BIT_4_ON) {
             case 0x00: spritePalette = ioPorts->getSpritePalette0(); break;
             case 0x10: spritePalette = ioPorts->getSpritePalette1(); break;
             default: spritePalette = 0x00; break;
@@ -260,12 +261,12 @@ void Display::getSpriteScanline()
             else
                 tileDataOffsetY = (currentLcdYCoordinate - spriteYPosition);
 
-            convertTileData(videoRam[(tileNumber * 16) + (tileDataOffsetY * 2)] +
-                           (videoRam[(tileNumber * 16) + (tileDataOffsetY * 2) + 1] << 8), spritePalette, true);
+            convertTileData(videoRam[(tileNumber * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2)] +
+                           (videoRam[(tileNumber * TILE_BYTE_WIDTH) + (tileDataOffsetY * 2) + 1] << 8), spritePalette, true);
 
             tileDataOffsetX = 0;
 
-            for (int16_t spriteX = (spriteXPosition - 8); spriteX < spriteXPosition; spriteX++)
+            for (int16_t spriteX = (spriteXPosition - TILE_WIDTH); spriteX < spriteXPosition; spriteX++)
             {
                 if ((spriteX >= 0) && (spriteX < 160))
                 {
