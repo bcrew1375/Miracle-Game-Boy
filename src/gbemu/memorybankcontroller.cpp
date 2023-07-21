@@ -130,13 +130,13 @@ std::shared_ptr<const uint8_t[]> MemoryBankController::getRamBankArray() const
 }
 
 
-uint8_t MemoryBankController::getRamBankSize() const
+const uint32_t MemoryBankController::getRamBankSize() const
 {
     return numberOfRamBanks * RAM_BANK_SIZE;
 }
 
 
-uint8_t MemoryBankController::readExternalRam(uint16_t address) const
+const uint8_t MemoryBankController::readExternalRam(uint16_t address) const
 {
     if ((hasExternalRam == true) && (ramEnabled == true))
         return ramBank.get()[(ramBankSelected * RAM_BANK_SIZE) + (address - 0xA000)];
@@ -145,7 +145,7 @@ uint8_t MemoryBankController::readExternalRam(uint16_t address) const
 }
 
 
-uint8_t MemoryBankController::readRomBank1(uint16_t address) const
+const uint8_t MemoryBankController::readRomBank1(uint16_t address) const
 {
     return romBank1.get()[address - ROM_BANK_SIZE];
 }

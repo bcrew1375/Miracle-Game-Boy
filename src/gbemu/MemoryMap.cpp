@@ -1,4 +1,5 @@
 #include "MemoryMap.h"
+#include "MemoryBankController.h"
 #include "IoPorts.h"
 
 #include <iostream>
@@ -8,7 +9,7 @@
 
 MemoryMap::MemoryMap(std::unique_ptr<const uint8_t[]> bootROM,
                      std::unique_ptr<const uint8_t[]> romData,
-                     uint32_t romSizeInBytes,
+                     const uint32_t romSizeInBytes,
                      std::shared_ptr<IOPorts> ioPorts)
 {
     // Ensure the ROM buffer contains at least 32,768 bytes (the minimum to fill both banks).
@@ -104,45 +105,45 @@ std::shared_ptr<const uint8_t[]> MemoryMap::getVideoRamArray() const
 
 uint8_t MemoryMap::readByte(uint16_t address) const
 {
-    if (address < 0x4000) {
+    if (address < ROM_BANK_1_OFFSET) {
         return romBank0[address];
     }
-    else if (address < 0x8000) {
+    else if (address < VIDEO_RAM_OFFSET) {
         if (externalHardwareType != 0x00)
             return memoryBankController->readRomBank1(address);
         else
-            return romBank1[address - 0x4000];
+            return romBank1[address - ROM_BANK_1_OFFSET];
     }
-    else if (address < 0xA000) {
-        return videoRam[address - 0x8000];
+    else if (address < EXTERNAL_RAM_BANK_OFFSET) {
+        return videoRam[address - VIDEO_RAM_OFFSET];
     }
     // External RAM should only be readable if the cartridge supports it. Otherwise, return an undefined value(0xFF).
-    else if (address < 0xC000) {
+    else if (address < INTERNAL_RAM_BANK_0_OFFSET) {
         if (externalHardwareType != 0x00)
             return memoryBankController->readExternalRam(address);
         else
-            return 0xFF;
+            return UNDEFINED_VALUE;
     }
-    else if (address < 0xD000) {
-        return internalRamBank0[address - 0xC000];
+    else if (address < INTERNAL_RAM_BANK_1_OFFSET) {
+        return internalRamBank0[address - INTERNAL_RAM_BANK_0_OFFSET];
     }
-    else if (address < 0xE000) {
-        return internalRamBank1[address - 0xD000];
+    else if (address < MIRROR_RAM_BANK_0_OFFSET) {
+        return internalRamBank1[address - INTERNAL_RAM_BANK_1_OFFSET];
     }
-    else if (address < 0xF000) {
-        return internalRamBank0[address - 0xE000];
+    else if (address < MIRROR_RAM_BANK_1_OFFSET) {
+        return internalRamBank0[address - MIRROR_RAM_BANK_0_OFFSET];
     }
-    else if (address < 0xFE00) {
-        return internalRamBank1[address - 0xF000];
+    else if (address < SPRITE_ATTRIBUTE_TABLE_OFFSET) {
+        return internalRamBank1[address - MIRROR_RAM_BANK_1_OFFSET];
     }
-    else if (address < 0xFEA0) {
+    else if (address < UNUSABLE_MEMORY_SPACE_OFFSET) {
         return spriteAttributeTable[address - 0xFE00];
     }
     // Unusable memory space. Return an undefined value(0xFF);
-    else if (address < 0xFF00) {
-        return 0xFF;
+    else if (address < IO_PORTS_OFFSET) {
+        return UNDEFINED_VALUE;
     }
-    else if (address < 0xFF80) {
+    else if (address < HIGH_RAM_OFFSET) {
         switch (address) {
         case 0xFF00: return ioPorts->getController(); break;
         case 0xFF01: return ioPorts->getSerialTransferData(); break;
@@ -166,17 +167,17 @@ uint8_t MemoryMap::readByte(uint16_t address) const
         case 0xFF49: return ioPorts->getSpritePalette1(); break;
         case 0xFF4A: return ioPorts->getWindowY(); break;
         case 0xFF4B: return ioPorts->getWindowX(); break;
-        default: return 0xFF; break;
+        default: return UNDEFINED_VALUE; break;
         }
     }
-    else if (address < 0xFFFF) {
-        return highRam[address - 0xFF80];
+    else if (address < INTERRUPT_ENABLE_FLAGS_OFFSET) {
+        return highRam[address - HIGH_RAM_OFFSET];
     }
-    else if (address == 0xFFFF) {
+    else if (address == INTERRUPT_ENABLE_FLAGS_OFFSET) {
         return interruptEnableFlags;
     }
     else
-        return 0xFF;
+        return UNDEFINED_VALUE;
 }
 
 void MemoryMap::setSaveRam(std::unique_ptr<const uint8_t[]> saveRam, uint32_t saveSize)
@@ -187,22 +188,22 @@ void MemoryMap::setSaveRam(std::unique_ptr<const uint8_t[]> saveRam, uint32_t sa
 
 void MemoryMap::writeByte(uint16_t address, uint8_t data)
 {
-    if (address < 0x2000) {
+    if (address < LOW_RAM_BANK_REGISTER_OFFSET) {
         if (externalHardwareType != 0x00)
             memoryBankController->writeRamEnableRegister(data);
     }
 
-    else if (address < 0x4000) {
+    else if (address < HIGH_RAM_BANK_REGISTER_OFFSET) {
         if (externalHardwareType != 0x00)
             memoryBankController->writeLowRomBankRegister(data);
     }
 
-    else if (address < 0x6000) {
+    else if (address < BANKING_MODE_REGISTER_OFFSET) {
         if (externalHardwareType != 0x00)
             memoryBankController->writeHighRomBankRegister(data);
     }
 
-    else if (address < 0x8000) {
+    else if (address < VIDEO_RAM_OFFSET) {
         if (externalHardwareType != 0x00)
             memoryBankController->writeBankingModeRegister(data);
     }
@@ -216,33 +217,33 @@ void MemoryMap::writeByte(uint16_t address, uint8_t data)
     }
 
     // External RAM should only be writable if the cartridge supports it. Otherwise, do nothing.
-    else if (address < 0xC000) {
+    else if (address < INTERNAL_RAM_BANK_0_OFFSET) {
         if (externalHardwareType != 0x00)
             memoryBankController->writeExternalRam(address, data);
     }
 
-    else if (address < 0xD000) {
+    else if (address < INTERNAL_RAM_BANK_1_OFFSET) {
         internalRamBank0[address - 0xC000] = data;
     }
 
-    else if (address < 0xE000) {
+    else if (address < MIRROR_RAM_BANK_0_OFFSET) {
         internalRamBank1[address - 0xD000] = data;
     }
 
     // This space will retain the values from 0xC000-0xDDFF regardless of any write operation.
-    else if (address < 0xFE00) {
+    else if (address < SPRITE_ATTRIBUTE_TABLE_OFFSET) {
     }
 
-    else if (address < 0xFEA0) {
+    else if (address < UNUSABLE_MEMORY_SPACE_OFFSET) {
         spriteAttributeTable[address - 0xFE00] = data;
     }
 
     // Unusable memory space. Do nothing.
-    else if (address < 0xFF00) {
+    else if (address < IO_PORTS_OFFSET) {
     }
 
     // Writing to this space will have various effects depending on the register written to.
-    else if (address < 0xFF80) {
+    else if (address < HIGH_RAM_OFFSET) {
         switch (address) {
         case 0xFF00: ioPorts->setController(data); break;
         case 0xFF01: ioPorts->setSerialTransferData(data); break;
@@ -276,7 +277,7 @@ void MemoryMap::writeByte(uint16_t address, uint8_t data)
         }
     }
 
-    else if (address < 0xFFFF) {
+    else if (address < INTERRUPT_ENABLE_FLAGS_OFFSET) {
         highRam[address - 0xFF80] = data;
 
         // For debugging purposes
@@ -284,7 +285,7 @@ void MemoryMap::writeByte(uint16_t address, uint8_t data)
             int j = 0;
     }
 
-    else if (address == 0xFFFF) {
+    else if (address == INTERRUPT_ENABLE_FLAGS_OFFSET) {
         interruptEnableFlags = data;
     }
 }

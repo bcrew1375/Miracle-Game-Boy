@@ -6,7 +6,7 @@
 
 
 // Map available platform strings to integers.
-static const std::map<std::string, int> availablePlatforms {
+std::map<std::string, int> availablePlatforms {
     {"Game Boy Classic", 0x01},
     {"Super Game Boy", 0x02},
     {"Game Boy Color", 0x03}
