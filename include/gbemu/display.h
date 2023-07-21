@@ -35,8 +35,17 @@ class Display
         static constexpr uint16_t FRAME_BUFFER_Y_SIZE = 144;
         static constexpr uint32_t FRAME_BUFFER_SIZE = (FRAME_BUFFER_X_SIZE * FRAME_BUFFER_Y_SIZE);
 
-        static constexpr uint32_t BACKGROUND_TILE_MAP_SIZE = 32 * 32;
+        static constexpr uint8_t TILE_BYTE_WIDTH = 16;
+        static constexpr uint8_t TILE_WIDTH = 8;
+        static constexpr uint8_t TILE_HEIGHT = 8;
+        static constexpr uint8_t TILE_HEIGHT_TALL = 16;
+        static constexpr uint8_t SPRITE_ATTRIBUTE_BYTE_WIDTH = 4;
+
+        static constexpr uint32_t BACKGROUND_TILE_MAP_WIDTH = 32;
+        static constexpr uint32_t BACKGROUND_TILE_MAP_HEIGHT = 32;
+        static constexpr uint32_t BACKGROUND_TILE_MAP_SIZE = BACKGROUND_TILE_MAP_WIDTH * BACKGROUND_TILE_MAP_HEIGHT;
         static constexpr uint32_t BACKGROUND_WINDOW_SCANLINE_BUFFER_SIZE = 160;
+
         static constexpr uint32_t FINALIZED_SCANLINE_BUFFER_SIZE = 160;
         static constexpr uint32_t SPRITE_SCANLINE_BUFFER_SIZE = 160;
         static constexpr uint32_t TILE_LINE_BUFFER_SIZE = 8;
