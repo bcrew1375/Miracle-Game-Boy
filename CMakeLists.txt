@@ -23,32 +23,32 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(UI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ui)
 
 set(PROJECT_SOURCES
-	"include/Platform.h"
+	"${INCLUDE_DIR}/MainWindow.h"
+	"${INCLUDE_DIR}/Platform.h"
 	"${INCLUDE_DIR}/platformsmap.h"
-	"include/MainWindow.h"
 
-	"include/gbemu/Cpu.h"
+	"${INCLUDE_DIR}/gbemu/Cpu.h"
 	"${INCLUDE_DIR}/gbemu/cycletables.h"
-	"include/gbemu/Display.h"
-	"include/gbemu/IoPorts.h"
-	"include/gbemu/MemoryMap.h"
-	"include/gbemu/MemoryBankController.h"
-	"include/gbemu/System.h"
-
+	"${INCLUDE_DIR}/gbemu/Display.h"
+	"${INCLUDE_DIR}/gbemu/IoPorts.h"
+	"${INCLUDE_DIR}/gbemu/MemoryMap.h"
+	"${INCLUDE_DIR}/gbemu/MemoryBankController.h"
+	"${INCLUDE_DIR}/gbemu/System.h"
+	"${INCLUDE_DIR}/gbemu/bitmanipulation.h"
 	"${INCLUDE_DIR}/opengl/opengl.h"
 
 	"${SOURCE_DIR}/main.cpp"
-	"src/MainWindow.cpp"
-	"src/Platform.cpp"
+	"${SOURCE_DIR}/MainWindow.cpp"
+	"${SOURCE_DIR}/Platform.cpp"
 
-	"src/gbemu/Cpu.cpp"
-	"src/gbemu/Display.cpp"
+	"${SOURCE_DIR}/gbemu/Cpu.cpp"
+	"${SOURCE_DIR}/gbemu/Display.cpp"
 	"${SOURCE_DIR}/gbemu/instructionset.cpp"
 	"${SOURCE_DIR}/gbemu/instructionsetcb.cpp"
-	"src/gbemu/IoPorts.cpp"
-	"src/gbemu/MemoryMap.cpp"
-	"src/gbemu/MemoryBankController.cpp"
-	"src/gbemu/System.cpp"
+	"${SOURCE_DIR}/gbemu/IoPorts.cpp"
+	"${SOURCE_DIR}/gbemu/MemoryMap.cpp"
+	"${SOURCE_DIR}/gbemu/MemoryBankController.cpp"
+	"${SOURCE_DIR}/gbemu/System.cpp"
 
 	"${SOURCE_DIR}/opengl/opengl.cpp"
 
@@ -56,7 +56,7 @@ set(PROJECT_SOURCES
 )
 
 # Add source to this project's executable.
-add_executable(Miracle-Game-Boy ${PROJECT_SOURCES} "include/gbemu/bitmanipulation.h")
+add_executable(Miracle-Game-Boy ${PROJECT_SOURCES})
 
 set_target_properties(Miracle-Game-Boy PROPERTIES AUTOUIC_SEARCH_PATHS ${UI_DIR})
 target_include_directories(Miracle-Game-Boy PRIVATE ${INCLUDE_DIR} ${INCLUDE_DIR}/gbemu ${INCLUDE_DIR}/opengl ${UI_DIR})
@@ -64,6 +64,14 @@ target_link_libraries(Miracle-Game-Boy Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Open
 
 if (CMAKE_VERSION VERSION_GREATER 3.25)
   set_property(TARGET Miracle-Game-Boy PROPERTY CXX_STANDARD 20)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    #target_compile_options(Miracle-Game-Boy PRIVATE "/Ox" "/Oi")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    #target_link_options(Miracle-Game-Boy PRIVATE "/INCREMENTAL:NO" "/LTCG")
 endif()
 
 # TODO: Add tests and install targets if needed.
