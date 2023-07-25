@@ -1,5 +1,6 @@
 #include "Cpu.h"
 #include "cycletables.h"
+#include "bitmanipulation.h"
 
 #include "IoPorts.h"
 #include "MemoryMap.h"
@@ -35,7 +36,7 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
 
     while (cyclesLeftToRun > 0) {
         // For debugging purposes. This is used to catch problems with code executing in restricted space.
-        if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC >= 0xC000) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
+        if (((registers.PC >= 0x8000) & (registers.PC < 0xC000)) || ((registers.PC >= 0xFE00) && (registers.PC < 0xFF80)) || (registers.PC == 0xFFFF))
             int j = 0;
         if ((registers.SP < 0xA000) || ((registers.SP >= 0xFEA0) && (registers.SP < 0xFF80)) || (registers.SP == 0xFFFF))
             int j = 0;
@@ -270,13 +271,13 @@ int32_t CPU::execute(int32_t cyclesLeftToRun) {
                 clockCyclesExecuted += clockCyclesCBTable[cbOpcode];
 
                 // Decode the opcode's instruction type, bits 7-6, where b00 = rotate/shift, b01 = test bit, b10 = reset bit, b11 = set bit
-                cbInstructionType = cbOpcode & 0xC0;
+                cbInstructionType = cbOpcode & (Bits::BIT_7_ON | Bits::BIT_6_ON);
 
                 // Decode the bit that will be operated on, bits 5-3, where b000 = bit 0, b001 = bit 1, b010 = bit 2, b011 = bit 3, b100 = bit 4, b101 = bit 5, b110 = bit 6, b111 = bit 7
-                cbBitNumber = cbOpcode & 0x38;
+                cbBitNumber = cbOpcode & (Bits::BIT_5_ON | Bits::BIT_4_ON | Bits::BIT_3_ON);
 
                 // Decode the register number to operate on, bits 2-0, where b000 = B, b001 = C, b010 = D, b011 = E, b100 = H, b101 = L, b110 = (HL), b111 = A
-                switch (cbOpcode & 0b00000111) {
+                switch (cbOpcode & (Bits::BIT_2_ON | Bits::BIT_1_ON | Bits::BIT_0_ON)) {
                 case 0b00000000: cbRegister = &registers.B; break;
                 case 0b00000001: cbRegister = &registers.C; break;
                 case 0b00000010: cbRegister = &registers.D; break;
@@ -465,7 +466,7 @@ void CPU::handleInterrupts()
 
     if (interruptMasterEnableFlag == true) {
         // V-Blank
-        if (((interruptRequestFlags & 0x01)) && ((enabledInterruptFlags & 0x01))) {
+        if (((interruptRequestFlags & Bits::BIT_0_ON)) && ((enabledInterruptFlags & Bits::BIT_0_ON))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1E);
             interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
@@ -473,7 +474,7 @@ void CPU::handleInterrupts()
             halted = false;
         }
         // LCD Status
-        else if (((interruptRequestFlags & 0x02)) && ((enabledInterruptFlags & 0x02))) {
+        else if (((interruptRequestFlags & Bits::BIT_1_ON)) && ((enabledInterruptFlags & Bits::BIT_1_ON))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1D);
             interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
@@ -481,7 +482,7 @@ void CPU::handleInterrupts()
             halted = false;
         }
         // Timer
-        else if (((interruptRequestFlags & 0x04)) && ((enabledInterruptFlags & 0x04))) {
+        else if (((interruptRequestFlags & Bits::BIT_2_ON)) && ((enabledInterruptFlags & Bits::BIT_2_ON))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x1B);
             interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
@@ -489,7 +490,7 @@ void CPU::handleInterrupts()
             halted = false;
         }
         // Serial
-        else if (((interruptRequestFlags & 0x08)) && ((enabledInterruptFlags & 0x08))) {
+        else if (((interruptRequestFlags & Bits::BIT_3_ON)) && ((enabledInterruptFlags & Bits::BIT_3_ON))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x17);
             interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
@@ -497,7 +498,7 @@ void CPU::handleInterrupts()
             halted = false;
         }
         // Joypad
-        else if (((interruptRequestFlags & 0x10)) && ((enabledInterruptFlags & 0x10))) {
+        else if (((interruptRequestFlags & Bits::BIT_2_ON)) && ((enabledInterruptFlags & Bits::BIT_2_ON))) {
             ioPorts->setInterruptRequestFlags(interruptRequestFlags & 0x0F);
             interruptMasterEnableFlag = false;
             z80_push_reg16(&registers.PC);
